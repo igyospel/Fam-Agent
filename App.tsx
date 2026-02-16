@@ -8,7 +8,7 @@ import AuthScreen from './components/AuthScreen';
 import ProfileSettings from './components/ProfileSettings';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import { Message, Attachment, User as UserType } from './types';
-import { streamGeminiResponse } from './services/geminiService';
+import { streamLLMResponse as streamGeminiResponse } from './services/llmService';
 import { authService } from './services/authService';
 import { generateId } from './utils';
 import { Sparkles, ArrowRight, User, List, Mail, CheckCircle2 } from 'lucide-react';
