@@ -1,8 +1,8 @@
 import { Message, Attachment } from "../types";
 
 const API_KEY = import.meta.env.VITE_GLM_API_KEY || "";
-const API_URL = "https://api.us-west-2.modal.direct/v1/chat/completions";
-const MODEL_ID = "zai-org/GLM-5-FP8";
+const API_URL = "/api/nvidia/chat/completions";
+const MODEL_ID = "moonshotai/kimi-k2.5";
 
 export async function* streamLLMResponse(
     history: Message[],
