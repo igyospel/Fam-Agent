@@ -1,5 +1,5 @@
 export const APP_NAME = "FAMWORLD";
-export const GEMINI_MODEL = "gemini-3-flash-preview";
+export const GEMINI_MODEL = "gemini-2.0-flash-lite";
 
 export const SYSTEM_INSTRUCTION = `You are a helpful, intelligent, and friendly AI assistant.
 Your goal is to provide natural, human-like, and concise responses.

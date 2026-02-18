@@ -3,6 +3,7 @@ export interface Attachment {
   previewUrl: string;
   base64: string;
   mimeType: string;
+  textContent?: string;
 }
 
 export interface Message {

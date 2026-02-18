@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { 
-  LayoutGrid, 
-  Search, 
-  FileText, 
-  Settings, 
+import {
+  LayoutGrid,
+  Search,
+  FileText,
+  Settings,
   Sparkles,
   Plus,
   MessageSquare,
@@ -24,21 +24,19 @@ interface SidebarProps {
   onSelectWorkspace: (id: string) => void;
   onDeleteWorkspace: (id: string) => void;
   onNewAgent: () => void;
-  onTriggerUpgrade: () => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ 
+const Sidebar: React.FC<SidebarProps> = ({
   user,
   isOpen,
   onClose,
   onLogout,
   onOpenProfile,
-  activeWorkspace, 
+  activeWorkspace,
   workspaces,
-  onSelectWorkspace, 
+  onSelectWorkspace,
   onDeleteWorkspace,
   onNewAgent,
-  onTriggerUpgrade
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -51,10 +49,9 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <>
       {/* Mobile Backdrop */}
-      <div 
-        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 ${
-          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
+      <div
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
         onClick={onClose}
       />
 
@@ -68,7 +65,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <div className="h-16 flex items-center justify-between px-6">
           <div className="flex items-center cursor-pointer" onClick={onNewAgent}>
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-200">
-               <Sparkles size={16} fill="white" />
+              <Sparkles size={16} fill="white" />
             </div>
             <span className="ml-3 font-bold text-lg text-gray-800 tracking-tight">Fam Agent</span>
           </div>
@@ -80,14 +77,14 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         <div className="px-4 py-4 space-y-3">
           {/* Action Buttons */}
-          <button 
+          <button
             onClick={onNewAgent}
             className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white rounded-full py-2.5 px-4 text-sm font-medium shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
             <Plus size={16} />
             New Agent
           </button>
-          <button 
+          <button
             onClick={() => alert("Import functionality coming in next update.")}
             className="w-full bg-white border border-gray-200 text-gray-600 rounded-full py-2.5 px-4 text-sm font-medium hover:bg-gray-50 hover:border-gray-300 transition-all flex items-center justify-center gap-2"
           >
@@ -98,9 +95,9 @@ const Sidebar: React.FC<SidebarProps> = ({
           {/* Search */}
           <div className="relative mt-6 group">
             <Search className="absolute left-3 top-2.5 text-gray-400 group-focus-within:text-orange-500 transition-colors" size={16} />
-            <input 
-              type="text" 
-              placeholder="Search..." 
+            <input
+              type="text"
+              placeholder="Search..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-9 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
@@ -111,49 +108,48 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Navigation */}
         <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4 custom-scrollbar">
-          
+
           {/* Dashboards Header */}
           <div>
-            <div 
+            <div
               className="flex items-center text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-2"
             >
               <LayoutGrid size={14} className="mr-2" />
               Dashboards
             </div>
           </div>
-          
+
           {/* Dynamic Project List */}
           <div className="space-y-0.5">
             {filteredWorkspaces.length > 0 ? (
               filteredWorkspaces.map((item, i) => (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   onClick={() => onSelectWorkspace(item)}
-                  className={`group flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer transition-all duration-200 ${
-                    activeWorkspace === item 
-                      ? 'bg-orange-50 text-orange-700 font-medium translate-x-1' 
+                  className={`group flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer transition-all duration-200 ${activeWorkspace === item
+                      ? 'bg-orange-50 text-orange-700 font-medium translate-x-1'
                       : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center min-w-0 overflow-hidden flex-1">
-                      <MessageSquare size={14} className={`mr-2 flex-shrink-0 ${activeWorkspace === item ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
-                      <span className="truncate">{item}</span>
+                    <MessageSquare size={14} className={`mr-2 flex-shrink-0 ${activeWorkspace === item ? 'text-orange-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                    <span className="truncate">{item}</span>
                   </div>
-                  <button 
-                      onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          onDeleteWorkspace(item);
-                      }}
-                      className="ml-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
-                      title="Delete Chat"
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onDeleteWorkspace(item);
+                    }}
+                    className="ml-2 p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                    title="Delete Chat"
                   >
-                      <Trash2 size={14} />
+                    <Trash2 size={14} />
                   </button>
                 </div>
               ))
             ) : (
-               <div className="px-3 py-2 text-xs text-gray-300 italic">No history found</div>
+              <div className="px-3 py-2 text-xs text-gray-300 italic">No history found</div>
             )}
           </div>
 
@@ -161,48 +157,35 @@ const Sidebar: React.FC<SidebarProps> = ({
 
         {/* Bottom Section */}
         <div className="p-4 space-y-4">
-          {/* Premium Card */}
-          <div 
-            onClick={onTriggerUpgrade}
-            className="bg-gradient-to-br from-orange-400 to-amber-600 rounded-2xl p-4 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden group cursor-pointer hover:shadow-orange-500/40 transition-all duration-300"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-white opacity-10 rounded-full blur-2xl transform translate-x-8 -translate-y-8 group-hover:scale-150 transition-transform duration-700"></div>
-            <h3 className="font-semibold mb-1 relative z-10">Premium Plan</h3>
-            <p className="text-xs text-orange-100 mb-3 relative z-10 leading-relaxed opacity-90">Upgrade to Premium Plan to Unlock More Feature You Need</p>
-            <button className="w-full bg-white text-orange-600 text-xs font-bold py-2.5 rounded-lg shadow-sm hover:bg-orange-50 transition-colors relative z-10">
-              Upgrade Premium
-            </button>
-          </div>
-
           {/* User Profile */}
           <div className="flex items-center gap-3 pt-2 border-t border-gray-100 group">
-             <div 
-               className="relative cursor-pointer"
-               onClick={onOpenProfile}
-             >
-               <img 
-                src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=random`} 
-                alt="Profile" 
-                className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm" 
-               />
-               <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
-             </div>
-             
-             <div 
-               className="flex-1 min-w-0 cursor-pointer"
-               onClick={onOpenProfile}
-             >
-               <p className="text-sm font-bold text-gray-700 truncate hover:text-orange-600 transition-colors">{user.name}</p>
-               <p className="text-[10px] text-gray-400 truncate uppercase tracking-wide font-medium" title={user.email}>{user.email}</p>
-             </div>
-             
-             <button 
-               onClick={onLogout}
-               className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50"
-               title="Log Out"
-             >
-               <LogOut size={16} />
-             </button>
+            <div
+              className="relative cursor-pointer"
+              onClick={onOpenProfile}
+            >
+              <img
+                src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=random`}
+                alt="Profile"
+                className="w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm"
+              />
+              <div className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 border-2 border-white rounded-full"></div>
+            </div>
+
+            <div
+              className="flex-1 min-w-0 cursor-pointer"
+              onClick={onOpenProfile}
+            >
+              <p className="text-sm font-bold text-gray-700 truncate hover:text-orange-600 transition-colors">{user.name}</p>
+              <p className="text-[10px] text-gray-400 truncate uppercase tracking-wide font-medium" title={user.email}>{user.email}</p>
+            </div>
+
+            <button
+              onClick={onLogout}
+              className="text-gray-400 hover:text-red-500 transition-colors p-1 rounded-md hover:bg-red-50"
+              title="Log Out"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </div>

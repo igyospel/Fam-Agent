@@ -3,7 +3,6 @@ import Header from './components/Header';
 import Sidebar from './components/Sidebar';
 import MessageBubble from './components/MessageBubble';
 import InputArea from './components/InputArea';
-import UpgradeModal from './components/UpgradeModal';
 import AuthScreen from './components/AuthScreen';
 import ProfileSettings from './components/ProfileSettings';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
@@ -13,8 +12,34 @@ import { authService } from './services/authService';
 import { generateId } from './utils';
 import { Sparkles, ArrowRight, User, List, Mail, CheckCircle2 } from 'lucide-react';
 
-// Mock initial data for workspaces
-const MOCK_HISTORIES: Record<string, Message[]> = {};
+const STORAGE_KEY = 'fam_agent_histories';
+const WORKSPACE_KEY = 'fam_agent_active_workspace';
+
+// Load chat histories from localStorage
+const loadHistories = (): Record<string, Message[]> => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch {
+    return {};
+  }
+};
+
+// Strip large base64 attachments before saving to avoid quota issues
+const sanitizeForStorage = (histories: Record<string, Message[]>): Record<string, Message[]> => {
+  const result: Record<string, Message[]> = {};
+  for (const [key, msgs] of Object.entries(histories)) {
+    result[key] = msgs.map(m => ({
+      ...m,
+      attachments: m.attachments?.map(att => ({
+        ...att,
+        base64: '', // strip base64 to save space
+        previewUrl: att.mimeType.startsWith('image/') ? '' : att.previewUrl,
+      }))
+    }));
+  }
+  return result;
+};
 
 const App: React.FC = () => {
   // Auth State
@@ -22,7 +47,6 @@ const App: React.FC = () => {
 
   // App State
   const [activeWorkspace, setActiveWorkspace] = useState<string | null>(null);
-  const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
   // Delete Modal State
@@ -40,8 +64,17 @@ const App: React.FC = () => {
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
-  const [chatHistories, setChatHistories] = useState<Record<string, Message[]>>(MOCK_HISTORIES);
+  const [chatHistories, setChatHistories] = useState<Record<string, Message[]>>(loadHistories);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Persist chat histories to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeForStorage(chatHistories)));
+    } catch (e) {
+      console.warn('Failed to save chat history:', e);
+    }
+  }, [chatHistories]);
 
   // Load user from localStorage on mount
   useEffect(() => {
@@ -269,7 +302,7 @@ const App: React.FC = () => {
       console.error("Chat error", error);
       setMessages(prev => prev.map(msg =>
         msg.id === botMessageId
-          ? { ...msg, text: "Sorry, I encountered an issue. Please try again.", isStreaming: false, isError: true }
+          ? { ...msg, text: `❌ Error: ${error instanceof Error ? error.message : "Terjadi kesalahan. Silakan coba lagi."}`, isStreaming: false, isError: true }
           : msg
       ));
     } finally {
@@ -308,13 +341,11 @@ const App: React.FC = () => {
         onSelectWorkspace={handleSelectWorkspace}
         onDeleteWorkspace={handleOpenDeleteModal}
         onNewAgent={handleNewAgent}
-        onTriggerUpgrade={() => setIsUpgradeModalOpen(true)}
       />
 
       <div className="flex-1 flex flex-col h-full relative w-full">
         <Header
           isChatActive={!showLanding}
-          onTriggerUpgrade={() => setIsUpgradeModalOpen(true)}
           onHistory={() => showToast("History synced to cloud.")}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
@@ -393,7 +424,6 @@ const App: React.FC = () => {
 
       </div>
 
-      <UpgradeModal isOpen={isUpgradeModalOpen} onClose={() => setIsUpgradeModalOpen(false)} />
       <DeleteConfirmationModal
         isOpen={deleteModalState.isOpen}
         workspaceName={deleteModalState.workspaceId || ''}

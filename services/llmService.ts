@@ -1,8 +1,11 @@
 import { Message, Attachment } from "../types";
 
-const API_KEY = import.meta.env.VITE_GLM_API_KEY || "";
-const API_URL = "/api/nvidia/chat/completions";
-const MODEL_ID = "moonshotai/kimi-k2.5";
+const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "";
+const API_URL = "/api/openrouter/chat/completions";
+// MiniMax models on OpenRouter:
+// minimax/minimax-01   — 1M ctx, image support, very smart, ~$0.0000002/token
+// minimax/minimax-m2.5 — 196K ctx, text only, latest flagship
+const MODEL_ID = "minimax/minimax-01";
 
 export async function* streamLLMResponse(
     history: Message[],
@@ -10,60 +13,102 @@ export async function* streamLLMResponse(
     attachments: Attachment[]
 ) {
     if (!API_KEY) {
-        throw new Error("GLM API Key not found in environment variables");
+        throw new Error("OpenRouter API Key tidak ditemukan. Pastikan VITE_OPENROUTER_API_KEY sudah diisi di .env.local");
     }
 
+    const hasImages = attachments.some(att => att.mimeType.startsWith("image/"));
+    const hasDocs = attachments.some(att => !att.mimeType.startsWith("image/"));
+
     try {
-        // Transform history to OpenAI format
-        const messages = history
-            .filter(m => !m.isError && m.id !== 'system-init') // Filter out errors and initial system greeting if present
+        // Transform history to OpenAI-compatible format
+        const messages: any[] = history
+            .filter(m => !m.isError && m.id !== 'system-init')
             .map(m => ({
                 role: m.role === 'model' ? 'assistant' : 'user',
                 content: m.text
             }));
 
-        // Add current user message
-        // Note: To support images, we would need to check if the model supports OpenAI vision format
-        // For now, we'll append text. If attachments exist, we'll append a note or their text content if extracted.
-        let userContent: any = currentMessageText;
+        // Build current user message content
+        let userContent: any;
 
-        if (attachments.length > 0) {
-            // Simple text fallback for attachments
-            // If we wanted to try vision:
-            // userContent = [
-            //   { type: "text", text: currentMessageText },
-            //   ...attachments.map(att => ({
-            //     type: "image_url",
-            //     image_url: { url: `data:${att.mimeType};base64,${att.base64}` } 
-            //   }))
-            // ];
-            console.warn("Attachments are currently ignored in GLM implementation (text-only mode).");
+        if (hasImages) {
+            // Vision: content array with text + image_url (base64)
+            const parts: any[] = [];
+
+            // Embed document text first
+            if (hasDocs) {
+                const docTexts = attachments
+                    .filter(att => !att.mimeType.startsWith("image/"))
+                    .map(att => att.textContent
+                        ? `[Dokumen: ${att.file.name}]\n${att.textContent}`
+                        : `[Dokumen: ${att.file.name} - tidak dapat membaca konten]`)
+                    .join("\n\n");
+                if (docTexts) parts.push({ type: "text", text: docTexts });
+            }
+
+            if (currentMessageText) {
+                parts.push({ type: "text", text: currentMessageText });
+            }
+
+            attachments
+                .filter(att => att.mimeType.startsWith("image/"))
+                .forEach(att => {
+                    const base64Url = att.base64.startsWith('data:')
+                        ? att.base64
+                        : `data:${att.mimeType};base64,${att.base64}`;
+                    parts.push({
+                        type: "image_url",
+                        image_url: { url: base64Url }
+                    });
+                });
+
+            userContent = parts;
+        } else if (hasDocs) {
+            const docTexts = attachments
+                .map(att => att.textContent
+                    ? `[Dokumen: ${att.file.name}]\n${att.textContent}`
+                    : `[Dokumen: ${att.file.name} - tidak dapat membaca konten]`)
+                .join("\n\n");
+            userContent = docTexts
+                ? `${docTexts}\n\n${currentMessageText}`
+                : currentMessageText;
+        } else {
+            userContent = currentMessageText;
         }
 
-        messages.push({
-            role: 'user',
-            content: userContent
-        });
+        messages.push({ role: 'user', content: userContent });
 
         const body = {
             model: MODEL_ID,
-            messages: messages,
+            messages,
             stream: true,
-            max_tokens: 1000 // Adjust as needed
+            temperature: 0.7,
+            top_p: 0.9,
+            max_tokens: 4096
         };
 
         const response = await fetch(API_URL, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${API_KEY}`
+                "Authorization": `Bearer ${API_KEY}`,
+                "HTTP-Referer": "http://localhost:3000",
+                "X-Title": "FamWorld AI",
+                "Accept": "text/event-stream"
             },
             body: JSON.stringify(body)
         });
 
         if (!response.ok) {
             const errorText = await response.text();
-            throw new Error(`API Error: ${response.status} - ${errorText}`);
+            let errorMsg = `API Error ${response.status}`;
+            try {
+                const errJson = JSON.parse(errorText);
+                errorMsg = errJson?.error?.message || errorMsg;
+            } catch {
+                errorMsg = errorText || errorMsg;
+            }
+            throw new Error(errorMsg);
         }
 
         if (!response.body) throw new Error("No response body");
@@ -76,11 +121,9 @@ export async function* streamLLMResponse(
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = decoder.decode(value, { stream: true });
-            buffer += chunk;
-
+            buffer += decoder.decode(value, { stream: true });
             const lines = buffer.split("\n");
-            buffer = lines.pop() || ""; // Keep the last incomplete line in buffer
+            buffer = lines.pop() || "";
 
             for (const line of lines) {
                 const trimmedLine = line.trim();
@@ -90,9 +133,7 @@ export async function* streamLLMResponse(
                     try {
                         const data = JSON.parse(trimmedLine.slice(6));
                         const delta = data.choices?.[0]?.delta?.content;
-                        if (delta) {
-                            yield delta;
-                        }
+                        if (delta) yield delta;
                     } catch (e) {
                         console.warn("Error parsing stream chunk:", e);
                     }
@@ -101,7 +142,7 @@ export async function* streamLLMResponse(
         }
 
     } catch (error) {
-        console.error("GLM API Error:", error);
+        console.error("OpenRouter API Error:", error);
         throw error;
     }
 }
