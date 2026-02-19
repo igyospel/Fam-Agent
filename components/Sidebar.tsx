@@ -64,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* Header Logo */}
         <div className="h-16 flex items-center justify-between px-6">
           <div className="flex items-center cursor-pointer" onClick={onNewAgent}>
-            <img src="/logoblack.png" alt="Agent Arga" className="h-8 w-auto object-contain" />
+            <img src="/logoblack.png" alt="Agent Arga" className="h-8 md:h-10 w-auto object-contain" />
           </div>
           {/* Mobile Close Button */}
           <button onClick={onClose} className="md:hidden text-gray-400 hover:text-gray-600">
