@@ -91,13 +91,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 {/* Grid pattern */}
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none" />
 
-                {/* Badge */}
-                <div className="relative mb-8 flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-sm text-gray-300 backdrop-blur-sm">
-                    <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                    Now powered by MiniMax — 1M token context
-                    <Zap size={14} className="text-amber-400 ml-1" />
-                </div>
-
                 {/* Headline */}
                 <h1 className="relative text-center font-black tracking-tight leading-[1.1] max-w-4xl">
                     <span className="block text-4xl md:text-6xl lg:text-7xl text-white mb-2">
