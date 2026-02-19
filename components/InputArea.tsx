@@ -1,10 +1,10 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Send, Paperclip, X, Image as ImageIcon, Loader2, Link as LinkIcon } from 'lucide-react';
+import { Send, Paperclip, X, Image as ImageIcon, Loader2, Link as LinkIcon, Globe } from 'lucide-react';
 import { Attachment } from '../types';
 import { processFiles } from '../utils';
 
 interface InputAreaProps {
-  onSendMessage: (text: string, attachments: Attachment[]) => void;
+  onSendMessage: (text: string, attachments: Attachment[], webSearch: boolean) => void;
   isLoading: boolean;
   isLanding?: boolean;
 }
@@ -13,6 +13,7 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
   const [text, setText] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isFocused, setIsFocused] = useState(false);
+  const [webSearch, setWebSearch] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -39,7 +40,7 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
 
   const handleSend = () => {
     if ((text.trim() || attachments.length > 0) && !isLoading) {
-      onSendMessage(text, attachments);
+      onSendMessage(text, attachments, webSearch);
       setText('');
       setAttachments([]);
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
@@ -53,7 +54,9 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
     }
   };
 
-  // Styles change based on whether it is the Landing Page hero input or the chat bottom input
+  // Disable web search toggle if images are attached (Perplexity doesn't support vision)
+  const hasImages = attachments.some(a => a.mimeType.startsWith('image/'));
+
   const containerClasses = isLanding
     ? "bg-white border border-gray-100 rounded-2xl shadow-sm p-3 md:p-4 w-full h-[150px] md:h-[180px] flex flex-col justify-between hover:shadow-md transition-shadow"
     : "bg-white border border-gray-200 rounded-2xl shadow-sm p-2 w-full flex flex-col";
@@ -103,7 +106,7 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask anything Agent Arga..."
+          placeholder={webSearch ? "Search the web with Agent Arga..." : "Ask anything Agent Arga..."}
           className={`
             w-full bg-transparent border-0 text-gray-800 placeholder-gray-400 focus:ring-0 resize-none
             ${isLanding ? 'text-base font-light h-full px-2 pt-2' : 'text-[16px] md:text-sm min-h-[44px] max-h-[140px]'}
@@ -112,7 +115,7 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
 
         <div className={`flex items-center justify-between mt-2 ${!isLanding ? 'px-1' : ''}`}>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <input
               type="file"
               multiple
@@ -142,13 +145,33 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
                 </button>
               </>
             ) : (
-              // Simple Icons for Chat Mode
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-              >
-                <Paperclip size={18} />
-              </button>
+              // Chat mode: attachment + web search toggle
+              <>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                  title="Attach file"
+                >
+                  <Paperclip size={18} />
+                </button>
+
+                {/* Web Search Toggle */}
+                <button
+                  onClick={() => !hasImages && setWebSearch(w => !w)}
+                  disabled={hasImages}
+                  title={hasImages ? "Web search unavailable when image is attached" : webSearch ? "Web search ON — click to disable" : "Enable web search"}
+                  className={`
+                    flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all
+                    ${hasImages ? 'opacity-40 cursor-not-allowed text-gray-400' :
+                      webSearch
+                        ? 'bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100'
+                        : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'}
+                  `}
+                >
+                  <Globe size={15} className={webSearch ? 'animate-pulse' : ''} />
+                  <span className="hidden sm:inline">{webSearch ? 'Web ON' : 'Web'}</span>
+                </button>
+              </>
             )}
           </div>
 

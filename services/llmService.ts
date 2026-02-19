@@ -2,15 +2,17 @@ import { Message, Attachment } from "../types";
 
 const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "";
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
-// MiniMax models on OpenRouter:
-// minimax/minimax-01   — 1M ctx, image support, very smart, ~$0.0000002/token
-// minimax/minimax-m2.5 — 196K ctx, text only, latest flagship
-const MODEL_ID = "minimax/minimax-01";
+
+// MiniMax: 1M ctx, vision support
+const MODEL_DEFAULT = "minimax/minimax-01";
+// Perplexity Sonar: real-time web search built-in
+const MODEL_WEB_SEARCH = "perplexity/sonar";
 
 export async function* streamLLMResponse(
     history: Message[],
     currentMessageText: string,
-    attachments: Attachment[]
+    attachments: Attachment[],
+    webSearch: boolean = false
 ) {
     if (!API_KEY) {
         throw new Error("OpenRouter API Key tidak ditemukan. Pastikan VITE_OPENROUTER_API_KEY sudah diisi di .env.local");
@@ -18,6 +20,9 @@ export async function* streamLLMResponse(
 
     const hasImages = attachments.some(att => att.mimeType.startsWith("image/"));
     const hasDocs = attachments.some(att => !att.mimeType.startsWith("image/"));
+
+    // Perplexity Sonar doesn't support vision — fallback to MiniMax if there are images
+    const modelId = (webSearch && !hasImages) ? MODEL_WEB_SEARCH : MODEL_DEFAULT;
 
     try {
         // Transform history to OpenAI-compatible format
@@ -32,10 +37,8 @@ export async function* streamLLMResponse(
         let userContent: any;
 
         if (hasImages) {
-            // Vision: content array with text + image_url (base64)
             const parts: any[] = [];
 
-            // Embed document text first
             if (hasDocs) {
                 const docTexts = attachments
                     .filter(att => !att.mimeType.startsWith("image/"))
@@ -78,11 +81,11 @@ export async function* streamLLMResponse(
 
         messages.push({ role: 'user', content: userContent });
 
-        const body = {
-            model: MODEL_ID,
+        const body: any = {
+            model: modelId,
             messages,
             stream: true,
-            temperature: 0.7,
+            temperature: webSearch ? 0.2 : 0.7,
             top_p: 0.9,
             max_tokens: 4096
         };

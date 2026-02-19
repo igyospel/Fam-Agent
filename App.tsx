@@ -223,7 +223,7 @@ const App: React.FC = () => {
     }]);
   };
 
-  const handleSendMessage = async (text: string, attachments: Attachment[]) => {
+  const handleSendMessage = async (text: string, attachments: Attachment[], webSearch: boolean = false) => {
     if (!text.trim() && attachments.length === 0) return;
 
     let currentWorkspaceId = activeWorkspace;
@@ -279,7 +279,7 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, botPlaceholder]);
 
     try {
-      const stream = streamGeminiResponse(messages, text, attachments);
+      const stream = streamGeminiResponse(messages, text, attachments, webSearch);
       let fullText = '';
 
       for await (const chunk of stream) {
