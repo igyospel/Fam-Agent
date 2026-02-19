@@ -80,7 +80,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             {/* Hero Section */}
             <section
                 ref={heroRef}
-                className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-20 pb-16 overflow-hidden"
+                className="relative min-h-screen flex flex-col items-center justify-center px-6 pt-36 pb-16 overflow-hidden"
                 style={{ '--mouse-x': '0px', '--mouse-y': '0px' } as React.CSSProperties}
             >
                 {/* Background orbs */}
