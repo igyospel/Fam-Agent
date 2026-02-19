@@ -19,7 +19,7 @@ const Header: React.FC<HeaderProps> = ({ isChatActive, onHistory, onToggleSideba
           <Menu size={24} />
         </button>
 
-        <img src="/logoblack.png" alt="Agent Arga" className="h-7 md:h-9 w-auto object-contain" />
+        <img src="/logoblack.png" alt="Agent Arga" className="h-5 md:h-6 w-auto object-contain" />
         <span className="hidden sm:block bg-orange-100 text-orange-600 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider border border-orange-200">
           Beta v2.0
         </span>
