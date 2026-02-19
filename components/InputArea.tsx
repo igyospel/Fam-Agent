@@ -103,7 +103,7 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ask anything Fam Agent..."
+          placeholder="Ask anything Agent Arga..."
           className={`
             w-full bg-transparent border-0 text-gray-800 placeholder-gray-400 focus:ring-0 resize-none
             ${isLanding ? 'text-base font-light h-full px-2 pt-2' : 'text-[16px] md:text-sm min-h-[44px] max-h-[140px]'}

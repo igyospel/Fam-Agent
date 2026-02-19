@@ -93,7 +93,7 @@ export async function* streamLLMResponse(
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${API_KEY}`,
                 "HTTP-Referer": "https://agentarga.fun",
-                "X-Title": "FamWorld AI",
+                "X-Title": "Agent Arga",
                 "Accept": "text/event-stream"
             },
             body: JSON.stringify(body)

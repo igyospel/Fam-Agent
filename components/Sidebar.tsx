@@ -67,7 +67,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-200">
               <Sparkles size={16} fill="white" />
             </div>
-            <span className="ml-3 font-bold text-lg text-gray-800 tracking-tight">Fam Agent</span>
+            <span className="ml-3 font-bold text-lg text-gray-800 tracking-tight">Agent Arga</span>
           </div>
           {/* Mobile Close Button */}
           <button onClick={onClose} className="md:hidden text-gray-400 hover:text-gray-600">

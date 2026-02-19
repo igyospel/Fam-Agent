@@ -91,7 +91,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
             {isSignUp ? 'Create Account' : 'Welcome Back'}
           </h1>
           <p className="text-gray-500 text-sm">
-            {isSignUp ? 'Join Fam Agent to explore AI capabilities.' : 'Enter your credentials to access your workspace.'}
+            {isSignUp ? 'Join Agent Arga to explore AI capabilities.' : 'Enter your credentials to access your workspace.'}
           </p>
         </div>
 

@@ -55,7 +55,7 @@ const GoogleSimulationModal: React.FC<GoogleSimulationModalProps> = ({
                         Sign in with Google
                     </h3>
                     <p className="text-gray-500 text-sm mt-1">
-                        To continue to <b>Fam Agent</b>
+                        To continue to <b>Agent Arga</b>
                     </p>
                 </div>
 
