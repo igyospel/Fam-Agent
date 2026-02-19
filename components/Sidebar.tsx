@@ -64,10 +64,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* Header Logo */}
         <div className="h-16 flex items-center justify-between px-6">
           <div className="flex items-center cursor-pointer" onClick={onNewAgent}>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-orange-400 to-orange-600 flex items-center justify-center text-white shadow-md shadow-orange-200">
-              <Sparkles size={16} fill="white" />
-            </div>
-            <span className="ml-3 font-bold text-lg text-gray-800 tracking-tight">Agent Arga</span>
+            <img src="/logoblack.png" alt="Agent Arga" className="h-8 w-auto object-contain" />
           </div>
           {/* Mobile Close Button */}
           <button onClick={onClose} className="md:hidden text-gray-400 hover:text-gray-600">
@@ -127,8 +124,8 @@ const Sidebar: React.FC<SidebarProps> = ({
                   key={i}
                   onClick={() => onSelectWorkspace(item)}
                   className={`group flex items-center justify-between px-3 py-2 text-sm rounded-lg cursor-pointer transition-all duration-200 ${activeWorkspace === item
-                      ? 'bg-orange-50 text-orange-700 font-medium translate-x-1'
-                      : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-orange-50 text-orange-700 font-medium translate-x-1'
+                    : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                 >
                   <div className="flex items-center min-w-0 overflow-hidden flex-1">

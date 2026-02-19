@@ -59,10 +59,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             {/* Navbar */}
             <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-white/5">
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-orange-400 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                        <Sparkles size={16} fill="white" className="text-white" />
-                    </div>
-                    <span className="font-bold text-lg text-white tracking-tight">Agent Arga</span>
+                    <img src="/logowhite.png" alt="Agent Arga" className="h-8 w-auto object-contain" />
                 </div>
                 <div className="hidden md:flex items-center gap-8 text-sm text-gray-400">
                     <a href="#features" className="hover:text-white transition-colors">Features</a>
@@ -298,10 +295,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             {/* Footer */}
             <footer className="py-8 px-6 border-t border-white/5 text-center text-gray-600 text-sm">
                 <div className="flex items-center justify-center gap-2 mb-2">
-                    <div className="w-5 h-5 rounded-lg bg-gradient-to-tr from-orange-400 to-amber-500 flex items-center justify-center">
-                        <Sparkles size={10} fill="white" className="text-white" />
-                    </div>
-                    <span className="font-semibold text-gray-400">Agent Arga</span>
+                    <img src="/logowhite.png" alt="Agent Arga" className="h-6 w-auto object-contain opacity-60" />
                 </div>
                 <p>© 2025 Agent Arga. Built with ❤️ by Arga.</p>
             </footer>
