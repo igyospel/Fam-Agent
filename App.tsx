@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar';
 import MessageBubble from './components/MessageBubble';
 import InputArea from './components/InputArea';
 import AuthScreen from './components/AuthScreen';
+import LandingPage from './components/LandingPage';
 import ProfileSettings from './components/ProfileSettings';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import { Message, Attachment, User as UserType } from './types';
@@ -48,7 +49,8 @@ const App: React.FC = () => {
   // App State
   const [activeWorkspace, setActiveWorkspace] = useState<string | null>(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile sidebar state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [showAuthScreen, setShowAuthScreen] = useState(false); // Show auth after landing CTA
   // Delete Modal State
   const [deleteModalState, setDeleteModalState] = useState<{ isOpen: boolean, workspaceId: string | null }>({
     isOpen: false,
@@ -322,7 +324,12 @@ const App: React.FC = () => {
     setTimeout(() => toast.remove(), 3000);
   };
 
-  // Render Auth Screen if not logged in
+  // Show marketing landing page first (unless already logged in)
+  if (!user && !showAuthScreen) {
+    return <LandingPage onGetStarted={() => setShowAuthScreen(true)} />;
+  }
+
+  // Show auth screen
   if (!user) {
     return <AuthScreen onLogin={handleLogin} />;
   }
