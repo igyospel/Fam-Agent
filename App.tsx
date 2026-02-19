@@ -335,7 +335,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-[100dvh] w-full bg-[#F9FAFB] overflow-hidden">
+    <div className="flex h-[100dvh] w-full bg-[#F9FAFB] overflow-hidden" style={{ position: 'fixed', inset: 0 }}>
 
       <Sidebar
         user={user}

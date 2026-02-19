@@ -54,7 +54,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
     ];
 
     return (
-        <div className="min-h-screen w-full bg-[#0A0A0F] text-white overflow-x-hidden">
+        <div className="min-h-screen w-full bg-[#0A0A0F] text-white overflow-x-hidden overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
 
             {/* Navbar */}
             <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 md:px-12 py-4 bg-[#0A0A0F]/80 backdrop-blur-xl border-b border-white/5">
