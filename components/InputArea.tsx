@@ -55,13 +55,13 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
 
   // Styles change based on whether it is the Landing Page hero input or the chat bottom input
   const containerClasses = isLanding
-    ? "bg-white border border-gray-100 rounded-2xl shadow-sm p-3 md:p-4 w-full h-[160px] md:h-[180px] flex flex-col justify-between hover:shadow-md transition-shadow"
+    ? "bg-white border border-gray-100 rounded-2xl shadow-sm p-3 md:p-4 w-full h-[150px] md:h-[180px] flex flex-col justify-between hover:shadow-md transition-shadow"
     : "bg-white border border-gray-200 rounded-2xl shadow-sm p-2 w-full flex flex-col";
 
   return (
     <div className="w-full relative group">
-      
-      <div 
+
+      <div
         className={containerClasses}
         onDragOver={(e) => { e.preventDefault(); setIsFocused(true); }}
         onDragLeave={() => setIsFocused(false)}
@@ -106,14 +106,14 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
           placeholder="Ask anything Fam Agent..."
           className={`
             w-full bg-transparent border-0 text-gray-800 placeholder-gray-400 focus:ring-0 resize-none
-            ${isLanding ? 'text-base md:text-lg font-light h-full px-2 pt-2' : 'text-sm min-h-[44px] max-h-[140px]'}
+            ${isLanding ? 'text-base font-light h-full px-2 pt-2' : 'text-[16px] md:text-sm min-h-[44px] max-h-[140px]'}
           `}
         />
 
         <div className={`flex items-center justify-between mt-2 ${!isLanding ? 'px-1' : ''}`}>
-          
+
           <div className="flex items-center gap-2">
-             <input
+            <input
               type="file"
               multiple
               ref={fileInputRef}
@@ -121,20 +121,20 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
               accept="image/*,.pdf,text/*"
               onChange={handleFileSelect}
             />
-            
+
             {/* Styled Buttons for Landing */}
             {isLanding ? (
               <>
-                <button 
-                   onClick={() => fileInputRef.current?.click()}
-                   className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
                 >
                   <LinkIcon size={14} className="text-gray-400" />
                   <span className="hidden sm:inline">Attach</span>
                 </button>
-                <button 
-                   onClick={() => fileInputRef.current?.click()}
-                   className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
                 >
                   <ImageIcon size={14} className="text-gray-400" />
                   <span className="hidden sm:inline">Upload Media</span>
@@ -143,9 +143,9 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
               </>
             ) : (
               // Simple Icons for Chat Mode
-              <button 
-                 onClick={() => fileInputRef.current?.click()}
-                 className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
               >
                 <Paperclip size={18} />
               </button>

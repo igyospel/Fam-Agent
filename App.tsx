@@ -328,7 +328,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-screen w-full bg-[#F9FAFB] overflow-hidden">
+    <div className="flex h-[100dvh] w-full bg-[#F9FAFB] overflow-hidden">
 
       <Sidebar
         user={user}
@@ -350,14 +350,14 @@ const App: React.FC = () => {
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
         />
 
-        <main className="flex-1 overflow-y-auto custom-scrollbar relative w-full">
+        <main className="flex-1 overflow-y-auto custom-scrollbar relative w-full overscroll-none">
 
           {showLanding ? (
             /* --- Landing / Welcome State --- */
-            <div className="flex flex-col items-center justify-center min-h-[calc(100vh-80px)] px-4 pb-20 fade-in">
+            <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] px-4 pb-24 md:pb-16 fade-in">
 
-              <div className="mb-10 text-center space-y-4 pt-10 md:pt-0">
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900 tracking-tight">
+              <div className="mb-6 md:mb-10 text-center space-y-3 pt-6 md:pt-0">
+                <h2 className="text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
                   Welcome back, {user.name.split(' ')[0]}
                 </h2>
                 <p className="text-gray-500 max-w-xl mx-auto text-sm md:text-base">
@@ -402,7 +402,7 @@ const App: React.FC = () => {
             </div>
           ) : (
             /* --- Active Chat State --- */
-            <div className="max-w-3xl mx-auto px-4 pt-8 pb-32">
+            <div className="max-w-3xl mx-auto px-3 md:px-4 pt-6 pb-36 md:pb-32">
               {messages.length > (activeWorkspace ? 0 : 1) && messages.map((msg, i) => (
                 // Skip the hidden init message for landing chat, show all for workspace chat
                 (msg.id === 'system-init' && !activeWorkspace) ? null : <MessageBubble key={msg.id} message={msg} />
@@ -415,8 +415,8 @@ const App: React.FC = () => {
 
         {/* Floating Input Area for Chat Mode */}
         {!showLanding && (
-          <div className="absolute bottom-6 left-0 right-0 px-4 flex justify-center z-20">
-            <div className="w-full max-w-3xl bg-white/80 backdrop-blur-xl rounded-3xl p-1 shadow-2xl shadow-gray-200/50 border border-white">
+          <div className="absolute bottom-0 left-0 right-0 px-3 md:px-4 pb-4 md:pb-6 flex justify-center z-20" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+            <div className="w-full max-w-3xl bg-white/80 backdrop-blur-xl rounded-2xl md:rounded-3xl p-1 shadow-2xl shadow-gray-200/50 border border-white">
               <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} isLanding={false} />
             </div>
           </div>
