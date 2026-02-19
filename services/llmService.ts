@@ -1,7 +1,7 @@
 import { Message, Attachment } from "../types";
 
 const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "";
-const API_URL = "/api/openrouter/chat/completions";
+const API_URL = "https://openrouter.ai/api/v1/chat/completions";
 // MiniMax models on OpenRouter:
 // minimax/minimax-01   — 1M ctx, image support, very smart, ~$0.0000002/token
 // minimax/minimax-m2.5 — 196K ctx, text only, latest flagship
@@ -92,7 +92,7 @@ export async function* streamLLMResponse(
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${API_KEY}`,
-                "HTTP-Referer": "http://localhost:3000",
+                "HTTP-Referer": "https://agentarga.fun",
                 "X-Title": "FamWorld AI",
                 "Accept": "text/event-stream"
             },
