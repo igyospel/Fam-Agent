@@ -1,4 +1,5 @@
 import { Message, Attachment } from "../types";
+import { SYSTEM_INSTRUCTION } from "../constants";
 
 const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "";
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -24,14 +25,19 @@ export async function* streamLLMResponse(
     // Perplexity Sonar doesn't support vision — fallback to MiniMax if there are images
     const modelId = (webSearch && !hasImages) ? MODEL_WEB_SEARCH : MODEL_DEFAULT;
 
+    console.log(`[LLM] Using model: ${modelId} | webSearch: ${webSearch}`);
+
     try {
-        // Transform history to OpenAI-compatible format
-        const messages: any[] = history
-            .filter(m => !m.isError && m.id !== 'system-init')
-            .map(m => ({
-                role: m.role === 'model' ? 'assistant' : 'user',
-                content: m.text
-            }));
+        // System prompt + history in OpenAI-compatible format
+        const messages: any[] = [
+            { role: 'system', content: SYSTEM_INSTRUCTION },
+            ...history
+                .filter(m => !m.isError && m.id !== 'system-init')
+                .map(m => ({
+                    role: m.role === 'model' ? 'assistant' : 'user',
+                    content: m.text
+                }))
+        ];
 
         // Build current user message content
         let userContent: any;
