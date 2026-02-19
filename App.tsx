@@ -10,7 +10,7 @@ import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import { Message, Attachment, User as UserType } from './types';
 import { streamLLMResponse as streamGeminiResponse } from './services/llmService';
 import { authService } from './services/authService';
-import { generateId } from './utils';
+import { generateId, compressImageForStorage } from './utils';
 import { Sparkles, ArrowRight, User, List, Mail, CheckCircle2 } from 'lucide-react';
 
 const STORAGE_KEY = 'fam_agent_histories';
@@ -26,18 +26,36 @@ const loadHistories = (): Record<string, Message[]> => {
   }
 };
 
-// Strip large base64 attachments before saving to avoid quota issues
-const sanitizeForStorage = (histories: Record<string, Message[]>): Record<string, Message[]> => {
+// Async: compress images to thumbnail, keep docs as-is, then save to localStorage
+const sanitizeForStorageAsync = async (
+  histories: Record<string, Message[]>
+): Promise<Record<string, Message[]>> => {
   const result: Record<string, Message[]> = {};
   for (const [key, msgs] of Object.entries(histories)) {
-    result[key] = msgs.map(m => ({
-      ...m,
-      attachments: m.attachments?.map(att => ({
-        ...att,
-        base64: '', // strip base64 to save space
-        previewUrl: att.mimeType.startsWith('image/') ? '' : att.previewUrl,
-      }))
-    }));
+    const sanitizedMsgs = await Promise.all(
+      msgs.map(async (m) => {
+        if (!m.attachments || m.attachments.length === 0) return m;
+        const sanitizedAttachments = await Promise.all(
+          m.attachments.map(async (att) => {
+            if (att.mimeType.startsWith('image/')) {
+              // Compress image to small thumbnail data URL for storage
+              const compressed = att.base64
+                ? await compressImageForStorage(att.base64, att.mimeType)
+                : (att.previewUrl || '');
+              return {
+                ...att,
+                base64: '',              // don't store raw base64
+                previewUrl: compressed, // store compressed thumbnail as previewUrl
+              };
+            }
+            // Docs: keep previewUrl (static SVG) and textContent, strip raw base64
+            return { ...att, base64: '' };
+          })
+        );
+        return { ...m, attachments: sanitizedAttachments };
+      })
+    );
+    result[key] = sanitizedMsgs;
   }
   return result;
 };
@@ -71,11 +89,13 @@ const App: React.FC = () => {
 
   // Persist chat histories to localStorage whenever they change
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitizeForStorage(chatHistories)));
-    } catch (e) {
-      console.warn('Failed to save chat history:', e);
-    }
+    sanitizeForStorageAsync(chatHistories).then(sanitized => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitized));
+      } catch (e) {
+        console.warn('Failed to save chat history:', e);
+      }
+    });
   }, [chatHistories]);
 
   // Load user from localStorage on mount

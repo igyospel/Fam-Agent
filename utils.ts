@@ -108,3 +108,39 @@ export const processFiles = async (files: FileList | null): Promise<Attachment[]
 };
 
 export const generateId = () => Math.random().toString(36).substring(2, 15);
+
+/**
+ * Compress a base64 image to a smaller data URL (thumbnail) for storage.
+ * Returns a data URL string (with prefix) or empty string on failure.
+ */
+export const compressImageForStorage = (
+  base64: string,
+  mimeType: string,
+  maxWidth = 400,
+  quality = 0.5
+): Promise<string> => {
+  return new Promise((resolve) => {
+    try {
+      const img = new Image();
+      const dataUrl = base64.startsWith('data:')
+        ? base64
+        : `data:${mimeType};base64,${base64}`;
+      img.onload = () => {
+        const scale = Math.min(1, maxWidth / img.width);
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) { resolve(''); return; }
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = () => resolve('');
+      img.src = dataUrl;
+    } catch {
+      resolve('');
+    }
+  });
+};
