@@ -5,6 +5,21 @@ import rehypeKatex from 'rehype-katex';
 import { Message } from '../types';
 import { User, Sparkles, FileText, AlertCircle } from 'lucide-react';
 
+/**
+ * Convert various LaTeX delimiter styles to the $ / $$ format that
+ * remark-math / KaTeX understand, regardless of what the AI returns.
+ */
+const preprocessLatex = (text: string): string => {
+  if (!text) return text;
+  return text
+    // \[...\] → $$...$$  (display block)
+    .replace(/\\\[([\s\S]*?)\\\]/g, (_m, inner) => `$$${inner}$$`)
+    // \(...\) → $...$   (inline)
+    .replace(/\\\(([\s\S]*?)\\\)/g, (_m, inner) => `$${inner}$`)
+    // already correct $$ or $ forms pass through unchanged
+    ;
+};
+
 interface MessageBubbleProps {
   message: Message;
 }
@@ -74,7 +89,7 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                 remarkPlugins={[remarkMath]}
                 rehypePlugins={[rehypeKatex]}
               >
-                {message.text}
+                {preprocessLatex(message.text)}
               </ReactMarkdown>
             ) : (
               message.isStreaming && (
