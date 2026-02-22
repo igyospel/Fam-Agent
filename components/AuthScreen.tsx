@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, User, ArrowRight, Loader2, Sparkles, Chrome } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Loader2, Sparkles, Command } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { User as UserType } from '../types';
 import { authService } from '../services/authService';
@@ -46,13 +46,11 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
       setError(null);
       setIsLoading(true);
       try {
-        // Fetch user info from Google
         const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
           headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
         });
         const googleUser = await userInfoResponse.json();
 
-        // Create or login user with Google data
         const user = await authService.googleLogin({
           email: googleUser.email,
           name: googleUser.name,
@@ -69,48 +67,54 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     }
   });
 
-  const handleGoogleLogin = () => {
-    googleLogin();
-  };
-
   return (
-    <div className="min-h-screen w-full bg-[#F9FAFB] flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen w-full bg-[#050505] flex items-center justify-center p-4 relative overflow-hidden selection:bg-orange-500/30 text-white">
 
-      {/* Background Decor */}
-      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-orange-200/30 rounded-full blur-3xl animate-pulse"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-200/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
+      {/* --- Premium Cinematic Background --- */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* Animated Orbs */}
+        <div className="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-orange-600/10 rounded-full blur-[120px] mix-blend-screen animate-pulse" style={{ animationDuration: '8s' }} />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-amber-500/10 rounded-full blur-[120px] mix-blend-screen animate-pulse" style={{ animationDuration: '12s' }} />
 
-      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl border border-white/50 shadow-2xl rounded-3xl overflow-hidden relative z-10 animate-enter">
+        {/* Noise overlay for cinematic texture */}
+        <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%22")' }} />
 
-        {/* Header */}
-        <div className="px-8 pt-8 pb-6 text-center">
-          <div className="w-12 h-12 mx-auto bg-gradient-to-tr from-orange-400 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-200 mb-4 transform rotate-3">
-            <Sparkles size={24} className="text-white" fill="white" />
+        {/* Grid lines */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:64px_64px]" />
+      </div>
+
+      {/* --- Main Auth Card --- */}
+      <div className="w-full max-w-md bg-[#0a0a0a]/80 backdrop-blur-2xl border border-white/10 shadow-2xl rounded-[2rem] overflow-hidden relative z-10">
+
+        {/* Card Header */}
+        <div className="px-8 pt-10 pb-6 text-center">
+          <div className="w-14 h-14 mx-auto bg-gradient-to-tr from-orange-500 to-amber-500 text-white rounded-2xl flex items-center justify-center shadow-[0_0_30px_-5px_rgba(249,115,22,0.4)] mb-6 transform rotate-3 hover:rotate-0 transition-transform duration-500 cursor-pointer">
+            <Command size={28} />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            {isSignUp ? 'Create Account' : 'Welcome Back'}
+          <h1 className="text-3xl font-bold tracking-tight text-white mb-2">
+            {isSignUp ? 'Create Workspace' : 'Welcome Back'}
           </h1>
-          <p className="text-gray-500 text-sm">
-            {isSignUp ? 'Join Agent Arga to explore AI capabilities.' : 'Enter your credentials to access your workspace.'}
+          <p className="text-gray-400 text-sm font-light">
+            {isSignUp ? 'Join Agent Arga and supercharge your workflow.' : 'Enter your credentials to access your agents.'}
           </p>
         </div>
 
-        <div className="px-8 pb-8 space-y-6">
+        {/* Form Body */}
+        <div className="px-8 pb-10 space-y-6">
 
-          {/* Error Message */}
           {error && (
-            <div className="bg-red-50 text-red-600 text-sm px-4 py-3 rounded-lg border border-red-100 flex items-center gap-2 animate-pulse">
-              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div className="bg-red-500/10 text-red-400 text-sm px-4 py-3 rounded-xl border border-red-500/20 flex items-center gap-2">
+              <Sparkles size={16} className="shrink-0" />
               <span>{error}</span>
             </div>
           )}
 
-          {/* Social Auth */}
+          {/* Google Login */}
           <button
             type="button"
-            onClick={handleGoogleLogin}
+            onClick={() => googleLogin()}
             disabled={isLoading}
-            className="w-full bg-white border border-gray-200 text-gray-700 font-medium py-3 rounded-xl flex items-center justify-center gap-3 hover:bg-gray-50 hover:border-gray-300 transition-all active:scale-[0.98]"
+            className="w-full bg-white/5 border border-white/10 text-white font-medium py-3.5 rounded-2xl flex items-center justify-center gap-3 hover:bg-white/10 transition-all active:scale-[0.98] shadow-lg"
           >
             {isLoading ? <Loader2 size={20} className="animate-spin text-gray-400" /> : (
               <>
@@ -127,83 +131,89 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
 
           <div className="relative flex items-center justify-center">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-100"></div>
+              <div className="w-full border-t border-white/10"></div>
             </div>
-            <span className="relative bg-white/50 backdrop-blur-sm px-4 text-xs text-gray-400 font-medium">
+            <span className="relative bg-[#0a0a0a] px-4 text-xs text-gray-500 font-medium tracking-widest uppercase">
               OR EMAIL
             </span>
           </div>
 
-          {/* Form */}
+          {/* Email / Form Auth */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div className="group relative">
-                <User size={18} className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+                <User size={18} className="absolute left-4 top-3.5 text-gray-500 group-focus-within:text-orange-400 transition-colors" />
                 <input
                   type="text"
                   placeholder="Full Name"
                   required={isSignUp}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full bg-gray-50/50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 transition-all placeholder:text-gray-400"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all placeholder:text-gray-600"
                 />
               </div>
             )}
 
             <div className="group relative">
-              <Mail size={18} className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+              <Mail size={18} className="absolute left-4 top-3.5 text-gray-500 group-focus-within:text-orange-400 transition-colors" />
               <input
                 type="email"
                 placeholder="Email Address"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className="w-full bg-gray-50/50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 transition-all placeholder:text-gray-400"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all placeholder:text-gray-600"
               />
             </div>
 
             <div className="group relative">
-              <Lock size={18} className="absolute left-3 top-3.5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+              <Lock size={18} className="absolute left-4 top-3.5 text-gray-500 group-focus-within:text-orange-400 transition-colors" />
               <input
                 type="password"
                 placeholder="Password"
                 required
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                className="w-full bg-gray-50/50 border border-gray-200 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20 transition-all placeholder:text-gray-400"
+                className="w-full bg-white/5 border border-white/10 rounded-2xl py-3.5 pl-12 pr-4 text-sm text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/50 transition-all placeholder:text-gray-600"
               />
             </div>
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold py-3 rounded-xl shadow-lg shadow-orange-500/20 hover:shadow-orange-500/40 hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 mt-2"
+              className="group relative w-full flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold py-3.5 rounded-2xl shadow-[0_0_30px_-5px_rgba(249,115,22,0.3)] hover:shadow-orange-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all mt-4 overflow-hidden"
             >
+              {/* Highlight sweep effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-[150%] group-hover:translate-x-[150%] transition-transform duration-700 pointer-events-none" />
+
               {isLoading ? <Loader2 size={20} className="animate-spin" /> : (
                 <>
-                  {isSignUp ? 'Create Account' : 'Sign In'}
-                  <ArrowRight size={18} />
+                  {isSignUp ? 'Initialize Workspace' : 'Sign In'}
+                  <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
                 </>
               )}
             </button>
           </form>
 
-          {/* Footer */}
-          <div className="text-center">
+          {/* Footer Toggle */}
+          <div className="text-center pt-2">
             <p className="text-sm text-gray-500">
               {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
               <button
-                onClick={() => setIsSignUp(!isSignUp)}
-                className="text-orange-600 font-semibold hover:text-orange-700 transition-colors"
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError(null);
+                }}
+                className="text-orange-400 font-semibold hover:text-orange-300 transition-colors border-b border-transparent hover:border-orange-400"
               >
-                {isSignUp ? 'Sign In' : 'Sign Up'}
+                {isSignUp ? 'Sign In' : 'Sign Up Free'}
               </button>
             </p>
           </div>
 
         </div>
       </div>
-
     </div>
   );
 };

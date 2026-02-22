@@ -58,8 +58,8 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
   const hasImages = attachments.some(a => a.mimeType.startsWith('image/'));
 
   const containerClasses = isLanding
-    ? "bg-white border border-gray-100 rounded-2xl shadow-sm p-3 md:p-4 w-full h-[150px] md:h-[180px] flex flex-col justify-between hover:shadow-md transition-shadow"
-    : "bg-white border border-gray-200 rounded-2xl shadow-sm p-2 w-full flex flex-col";
+    ? "bg-[#0a0a0a]/60 backdrop-blur-2xl border border-white/10 rounded-[2rem] shadow-[0_0_50px_-12px_rgba(0,0,0,1)] p-4 md:p-6 w-full h-[160px] md:h-[200px] flex flex-col justify-between hover:border-white/20 hover:bg-[#0a0a0a]/80 transition-all duration-500 font-light relative overflow-hidden group/container"
+    : "bg-transparent w-full flex flex-col pt-3";
 
   return (
     <div className="w-full relative group">
@@ -77,22 +77,22 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
       >
         {/* Drop Overlay */}
         {isFocused && (
-          <div className="absolute inset-0 bg-orange-50/50 border-2 border-orange-500 border-dashed rounded-2xl z-20 flex items-center justify-center pointer-events-none">
-            <span className="text-orange-600 font-medium">Drop files here</span>
+          <div className="absolute inset-0 bg-orange-500/10 border-2 border-orange-500 border-dashed rounded-2xl z-20 flex items-center justify-center pointer-events-none backdrop-blur-sm">
+            <span className="text-orange-400 font-medium tracking-widest uppercase text-sm">Drop files here</span>
           </div>
         )}
 
         {/* Attachment Previews */}
         {attachments.length > 0 && (
-          <div className="flex gap-2 px-2 pb-2 overflow-x-auto">
+          <div className="flex gap-2 px-2 pb-2 overflow-x-auto custom-scrollbar">
             {attachments.map((att, i) => (
               <div key={i} className="relative group shrink-0">
-                <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200">
-                  <img src={att.previewUrl} alt="preview" className="w-full h-full object-cover" />
+                <div className="w-14 h-14 rounded-xl overflow-hidden border border-white/10 bg-black/50">
+                  <img src={att.previewUrl} alt="preview" className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <button
                   onClick={() => removeAttachment(i)}
-                  className="absolute -top-1.5 -right-1.5 bg-gray-800 text-white rounded-full p-0.5"
+                  className="absolute -top-1.5 -right-1.5 bg-black text-white rounded-full p-1 border border-white/10 hover:bg-red-500 transition-colors shadow-lg"
                 >
                   <X size={10} />
                 </button>
@@ -106,16 +106,16 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={webSearch ? "Search the web with Agent Arga..." : "Ask anything Agent Arga..."}
+          placeholder={webSearch ? "Search the web with Agent Arga..." : "Initialize command sequence..."}
           className={`
-            w-full bg-transparent border-0 text-gray-800 placeholder-gray-400 focus:ring-0 resize-none
-            ${isLanding ? 'text-base font-light h-full px-2 pt-2' : 'text-[16px] md:text-sm min-h-[44px] max-h-[140px]'}
+            w-full bg-transparent border-0 text-white placeholder-gray-500 focus:ring-0 resize-none custom-scrollbar
+            ${isLanding ? 'text-lg md:text-xl font-light h-full px-2 pt-2' : 'text-[16px] md:text-sm min-h-[44px] max-h-[140px] px-4'}
           `}
         />
 
-        <div className={`flex items-center justify-between mt-2 ${!isLanding ? 'px-1' : ''}`}>
+        <div className={`flex items-center justify-between mt-2 ${!isLanding ? 'px-2 pb-2' : ''}`}>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             <input
               type="file"
               multiple
@@ -130,16 +130,16 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
               <>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-gray-300 hover:bg-white/10 hover:text-white transition-all shadow-md backdrop-blur-md"
                 >
-                  <LinkIcon size={14} className="text-gray-400" />
+                  <LinkIcon size={14} className="text-orange-400" />
                   <span className="hidden sm:inline">Attach</span>
                 </button>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2 rounded-xl bg-gray-50 border border-gray-100 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-gray-300 hover:bg-white/10 hover:text-white transition-all shadow-md backdrop-blur-md"
                 >
-                  <ImageIcon size={14} className="text-gray-400" />
+                  <ImageIcon size={14} className="text-violet-400" />
                   <span className="hidden sm:inline">Upload Media</span>
                   <span className="sm:hidden">Media</span>
                 </button>
@@ -149,7 +149,7 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
               <>
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                  className="p-2.5 rounded-xl text-gray-400 hover:bg-white/5 hover:text-white transition-colors"
                   title="Attach file"
                 >
                   <Paperclip size={18} />
@@ -161,15 +161,15 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
                   disabled={hasImages}
                   title={hasImages ? "Web search unavailable when image is attached" : webSearch ? "Web search ON — click to disable" : "Enable web search"}
                   className={`
-                    flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all
-                    ${hasImages ? 'opacity-40 cursor-not-allowed text-gray-400' :
+                    flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold transition-all backdrop-blur-sm
+                    ${hasImages ? 'opacity-40 cursor-not-allowed text-gray-600' :
                       webSearch
-                        ? 'bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100'
-                        : 'text-gray-400 hover:bg-gray-100 hover:text-gray-600'}
+                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+                        : 'text-gray-400 hover:bg-white/5 border border-transparent hover:text-white'}
                   `}
                 >
                   <Globe size={15} className={webSearch ? 'animate-pulse' : ''} />
-                  <span className="hidden sm:inline">{webSearch ? 'Web ON' : 'Web'}</span>
+                  <span className="hidden sm:inline">{webSearch ? 'Web ON' : 'Web OFF'}</span>
                 </button>
               </>
             )}
@@ -179,12 +179,12 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
             onClick={handleSend}
             disabled={(!text.trim() && attachments.length === 0) || isLoading}
             className={`
-              rounded-xl flex items-center justify-center transition-all duration-300
-              ${isLanding ? 'p-3 bg-gray-900 text-white shadow-md hover:bg-black' : 'p-2 bg-orange-500 text-white hover:bg-orange-600'}
-              ${((!text.trim() && attachments.length === 0) || isLoading) ? 'opacity-50 cursor-not-allowed' : ''}
+              rounded-xl flex items-center justify-center transition-all duration-300 shadow-xl overflow-hidden relative group
+              ${isLanding ? 'px-6 py-3 bg-white text-black hover:bg-gray-200' : 'p-2.5 bg-gradient-to-tr from-orange-500 to-amber-500 text-white hover:shadow-[0_0_20px_rgba(249,115,22,0.4)]'}
+              ${((!text.trim() && attachments.length === 0) || isLoading) ? 'opacity-30 cursor-not-allowed grayscale' : ''}
             `}
           >
-            {isLoading ? <Loader2 size={isLanding ? 20 : 16} className="animate-spin" /> : <Send size={isLanding ? 20 : 16} />}
+            {isLoading ? <Loader2 size={isLanding ? 20 : 18} className="animate-spin relative z-10" /> : <Send size={isLanding ? 20 : 18} className="relative z-10" />}
           </button>
         </div>
       </div>

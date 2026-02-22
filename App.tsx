@@ -355,7 +355,19 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="flex h-[100dvh] w-full bg-[#F9FAFB] overflow-hidden" style={{ position: 'fixed', inset: 0 }}>
+    <div className="flex h-[100dvh] w-full bg-[#030303] overflow-hidden text-gray-200 selection:bg-orange-500/30 font-sans" style={{ position: 'fixed', inset: 0 }}>
+      {/* Cinematic App-wide Background */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden flex items-center justify-center">
+        {/* Animated Glow Orbs */}
+        <div className="absolute top-[-20%] left-[-10%] w-[60vw] h-[60vw] bg-orange-600/5 rounded-full blur-[150px] mix-blend-screen" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] bg-amber-500/5 rounded-full blur-[150px] mix-blend-screen" />
+
+        {/* Subtle high-tech grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_10%,transparent_100%)]" />
+
+        {/* Noise overlay */}
+        <div className="absolute inset-0 opacity-[0.02] mix-blend-overlay" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.8%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%22")' }} />
+      </div>
 
       <Sidebar
         user={user}
@@ -381,27 +393,31 @@ const App: React.FC = () => {
 
           {showLanding ? (
             /* --- Landing / Welcome State --- */
-            <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] px-4 pb-24 md:pb-16 fade-in">
+            <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] px-4 pb-24 md:pb-16 fade-in relative">
 
-              <div className="mb-6 md:mb-10 text-center space-y-3 pt-6 md:pt-0">
-                <h2 className="text-2xl md:text-4xl font-bold text-gray-900 tracking-tight">
-                  Welcome back, {user.name.split(' ')[0]}
+              {/* Cinematic Background effect in Dashboard Landing */}
+              <div className="absolute top-1/4 w-[50vw] h-[50vw] bg-orange-500/5 rounded-full blur-[120px] pointer-events-none" />
+
+              <div className="mb-8 md:mb-12 text-center space-y-4 pt-6 md:pt-0 relative z-10">
+
+                <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-white">
+                  Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 drop-shadow-[0_0_30px_rgba(249,115,22,0.3)]">Level Two</span>
                 </h2>
-                <p className="text-gray-500 max-w-xl mx-auto text-sm md:text-base">
-                  Your AI Copilot awaits. Select a workspace from the left or start a new conversation below.
+                <p className="text-gray-400 max-w-xl mx-auto text-sm md:text-lg font-light leading-relaxed">
+                  Your premium AI operating system. <strong>{user.name.split(' ')[0]}</strong>, select a session or deploy a new agent sequence below.
                 </p>
               </div>
 
-              <div className="w-full max-w-2xl mb-12">
+              <div className="w-full max-w-2xl mb-12 relative z-10">
                 <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} isLanding={true} />
               </div>
 
-              <div className="w-full max-w-5xl hidden md:block">
+              <div className="w-full max-w-5xl hidden md:block relative z-10">
                 <div className="flex items-center gap-2 mb-6 ml-2">
-                  <h3 className="font-semibold text-gray-800 text-lg">Quick Templates</h3>
+                  <h3 className="font-semibold text-gray-400 text-sm tracking-widest uppercase">Quick Actions</h3>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {[
                     { icon: User, text: "Write a to do list with best practice for designers" },
                     { icon: Mail, text: "Draft a follow-up email for new leads from yesterday" },
@@ -410,15 +426,15 @@ const App: React.FC = () => {
                     <div
                       key={i}
                       onClick={() => handleTemplateClick(item.text)}
-                      className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md hover:border-orange-200 transition-all cursor-pointer group flex flex-col justify-between h-40"
+                      className="bg-white/5 p-6 rounded-[1.5rem] border border-white/10 shadow-lg hover:shadow-[0_0_30px_-5px_rgba(249,115,22,0.15)] hover:border-orange-500/30 transition-all duration-300 cursor-pointer group flex flex-col justify-between h-40"
                     >
                       <div>
-                        <p className="text-gray-700 font-medium text-sm leading-relaxed">{item.text}</p>
+                        <p className="text-gray-300 font-medium text-sm leading-relaxed group-hover:text-white transition-colors">{item.text}</p>
                       </div>
                       <div className="flex items-center justify-between">
-                        <item.icon size={18} className="text-gray-400" />
-                        <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center group-hover:bg-orange-50 transition-colors">
-                          <ArrowRight size={14} className="text-gray-400 group-hover:text-orange-500" />
+                        <item.icon size={18} className="text-gray-500 group-hover:text-orange-400 transition-colors" />
+                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-orange-500/20 group-hover:border-orange-500/40 transition-all">
+                          <ArrowRight size={14} className="text-gray-500 group-hover:text-orange-400" />
                         </div>
                       </div>
                     </div>
@@ -443,8 +459,11 @@ const App: React.FC = () => {
         {/* Floating Input Area for Chat Mode */}
         {!showLanding && (
           <div className="absolute bottom-0 left-0 right-0 px-3 md:px-4 pb-4 md:pb-6 flex justify-center z-20" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-            <div className="w-full max-w-3xl bg-white/80 backdrop-blur-xl rounded-2xl md:rounded-3xl p-1 shadow-2xl shadow-gray-200/50 border border-white">
-              <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} isLanding={false} />
+            <div className="w-full max-w-3xl bg-[#0a0a0a]/80 backdrop-blur-2xl rounded-3xl p-[1px] shadow-2xl shadow-black border border-white/10 relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-3xl opacity-50 pointer-events-none blur-sm" />
+              <div className="relative z-10 bg-[#0A0A0F] rounded-[1.4rem] overflow-hidden">
+                <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} isLanding={false} />
+              </div>
             </div>
           </div>
         )}

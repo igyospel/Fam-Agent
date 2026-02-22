@@ -4,8 +4,8 @@ import { SYSTEM_INSTRUCTION } from "../constants";
 const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "";
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-// MiniMax: 1M ctx, vision support
-const MODEL_DEFAULT = "minimax/minimax-01";
+// Gemini 2.5 Flash: Very fast, super cheap, great vision and anime recognition
+const MODEL_DEFAULT = "google/gemini-2.5-flash";
 // Perplexity Sonar: real-time web search built-in
 const MODEL_WEB_SEARCH = "perplexity/sonar";
 
