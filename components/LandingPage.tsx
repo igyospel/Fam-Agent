@@ -31,7 +31,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             <nav className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#050505]/80 backdrop-blur-xl border-b border-white/5 py-4' : 'bg-transparent py-6'}`}>
                 <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
                     <div className="flex items-center cursor-pointer">
-                        <img src="/logomain.png" alt="Agent Arga" className="h-8 md:h-10 w-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] hover:scale-105 transition-transform duration-300 origin-left" />
+                        <img src="/logomain.png" alt="Agent Arga" className="h-5 md:h-6 w-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] hover:scale-105 transition-transform duration-300 origin-left" />
                     </div>
                     <div className="hidden md:flex items-center gap-8 text-sm font-medium text-gray-400">
                         <a href="#features" onClick={(e) => scrollToSection(e, 'features')} className="hover:text-white transition-colors cursor-pointer">Features</a>
@@ -253,7 +253,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
 
                     <div className="relative p-16 md:p-32 text-center flex flex-col items-center z-10">
                         <div className="flex items-center justify-center mb-8 shadow-2xl hover:scale-105 transition-transform duration-300">
-                            <img src="/logomain.png" alt="Agent Arga" className="h-12 md:h-16 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
+                            <img src="/logomain.png" alt="Agent Arga" className="h-8 md:h-10 w-auto object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]" />
                         </div>
                         <h2 className="text-5xl md:text-7xl font-bold text-white tracking-tighter mb-8 leading-tight">
                             Stop typing. <br /> Start generating.
@@ -275,7 +275,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             {/* --- FOOTER --- */}
             <footer className="py-12 text-center text-gray-500 text-sm border-t border-white/5 flex flex-col items-center gap-6">
                 <div className="flex items-center justify-center mb-4 hover:scale-105 transition-transform duration-300 cursor-pointer">
-                    <img src="/logomain.png" alt="Agent Arga" className="h-6 md:h-8 w-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] grayscale hover:grayscale-0 transition-all opacity-80 hover:opacity-100" />
+                    <img src="/logomain.png" alt="Agent Arga" className="h-4 md:h-5 w-auto object-contain drop-shadow-[0_0_10px_rgba(255,255,255,0.1)] grayscale hover:grayscale-0 transition-all opacity-80 hover:opacity-100" />
                 </div>
                 <div className="flex gap-6 font-medium">
                     <a href="#" className="hover:text-white transition-colors">Privacy</a>

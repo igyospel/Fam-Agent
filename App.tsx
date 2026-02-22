@@ -401,10 +401,10 @@ const App: React.FC = () => {
               <div className="mb-8 md:mb-12 text-center space-y-4 pt-6 md:pt-0 relative z-10">
 
                 <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-white">
-                  Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 drop-shadow-[0_0_30px_rgba(249,115,22,0.3)]">Level Two</span>
+                  Agent <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 drop-shadow-[0_0_30px_rgba(249,115,22,0.3)]">Arga</span>
                 </h2>
                 <p className="text-gray-400 max-w-xl mx-auto text-sm md:text-lg font-light leading-relaxed">
-                  Your premium AI operating system. <strong>{user.name.split(' ')[0]}</strong>, select a session or deploy a new agent sequence below.
+                  System online. Welcome back, <strong className="text-orange-200">{user.name.split(' ')[0]}</strong>. Enter an instruction or select a module below to initiate a sequence.
                 </p>
               </div>
 
