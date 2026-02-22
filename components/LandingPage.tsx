@@ -58,8 +58,8 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         loop
                         muted
                         playsInline
-                        className="w-full h-full object-cover opacity-60 scale-[1.15] md:scale-[1.25]"
-                        style={{ objectPosition: 'center' }}
+                        className="w-full h-full object-cover opacity-60"
+                        style={{ objectPosition: 'center center' }}
                     />
 
                     {/* Simple, clean overlay for readable text */}
