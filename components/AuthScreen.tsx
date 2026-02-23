@@ -71,7 +71,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
     <div className="min-h-screen w-full flex bg-[#050505] text-white selection:bg-orange-500/30 overflow-hidden">
 
       {/* --- Left Side: Cinematic Visuals (Hidden on Mobile) --- */}
-      <div className="hidden lg:flex w-1/2 relative flex-col justify-between border-r border-white/5 bg-black">
+      <div className="hidden lg:flex w-1/2 shrink-0 max-w-[50%] relative flex-col justify-between border-r border-white/5 bg-black overflow-hidden">
         {/* Cinematic Video Background */}
         <div className="absolute inset-0 w-full h-full z-0 overflow-hidden bg-black">
           <video
@@ -107,13 +107,13 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
       </div>
 
       {/* --- Right Side: Auth Form --- */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 relative">
+      <div className="w-full lg:w-1/2 lg:shrink-0 lg:max-w-[50%] flex items-center justify-center p-6 relative">
         {/* Subtle Background Glows for Right Side */}
         <div className="absolute top-[10%] right-[-10%] w-[50vw] h-[50vw] bg-orange-600/5 rounded-full blur-[120px] mix-blend-screen pointer-events-none" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-violet-600/5 rounded-full blur-[120px] mix-blend-screen pointer-events-none" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:64px_64px] pointer-events-none lg:hidden" />
 
-        <div className="w-full max-w-md relative z-10 flex flex-col pt-8 lg:pt-0">
+        <div className="w-full max-w-md relative z-30 flex flex-col pt-8 lg:pt-0">
 
           {/* Mobile Logo */}
           <div className="lg:hidden flex items-center justify-center mb-10 mt-auto">
