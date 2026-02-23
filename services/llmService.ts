@@ -5,8 +5,10 @@ import { streamGeminiResponse } from "./geminiService";
 const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "";
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
 
-// Gemini 2.5 Flash: Very fast, super cheap, great vision and anime recognition
-const MODEL_DEFAULT = "google/gemini-2.5-flash";
+// Llama 3.3 70B Instruct: Exceptionally brilliant reasoning, highly nuanced output, extremely cheap.
+const MODEL_DEFAULT = "meta-llama/llama-3.3-70b-instruct";
+// Gemini 2.5 Flash: Very fast, super cheap, great vision capabilities (Llama doesn't support images)
+const MODEL_VISION = "google/gemini-2.5-flash";
 // Perplexity Sonar: real-time web search built-in
 const MODEL_WEB_SEARCH = "perplexity/sonar";
 
@@ -32,8 +34,15 @@ export async function* streamLLMResponse(
         }
     }
 
-    // Perplexity Sonar doesn't support vision — fallback to MiniMax if there are images
-    const modelId = (webSearch && !hasImages) ? MODEL_WEB_SEARCH : MODEL_DEFAULT;
+    // Select appropriate Model
+    let modelId = MODEL_DEFAULT;
+
+    // Perplexity Sonar and Llama 3.3 don't support vision — fallback to Gemini 2.5 Flash if there are images
+    if (hasImages) {
+        modelId = MODEL_VISION;
+    } else if (webSearch) {
+        modelId = MODEL_WEB_SEARCH;
+    }
 
     console.log(`[LLM] Using model: ${modelId} | webSearch: ${webSearch}`);
 
