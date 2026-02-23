@@ -95,10 +95,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
         </div>
 
         <div className="relative z-20 p-12 pb-20">
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 backdrop-blur-md mb-6 shadow-lg">
-            <Sparkles size={12} className="text-orange-400" />
-            <span className="text-[10px] font-bold tracking-widest text-orange-300 uppercase">System Active</span>
-          </div>
+
           <h1 className="text-4xl lg:text-6xl font-bold tracking-tighter leading-[1.05] mb-6">
             Beyond Chat. <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-200 to-orange-500 drop-shadow-lg">Pure Execution.</span>
