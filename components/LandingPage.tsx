@@ -50,7 +50,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             {/* --- HERO SECTION --- */}
             <section className="relative h-[100dvh] flex flex-col items-center justify-center px-6 overflow-hidden">
                 {/* Clean Cinematic Video Background */}
-                <div className="absolute inset-0 w-full h-full z-0 overflow-hidden bg-black">
+                <div className="absolute inset-0 w-full h-full z-0 overflow-hidden bg-black flex justify-center items-center">
                     {/* The Video */}
                     <video
                         src="/landingpage.mp4"
@@ -58,7 +58,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         loop
                         muted
                         playsInline
-                        className="absolute top-1/2 left-1/2 w-[100vw] min-w-full min-h-full max-w-none object-cover opacity-60 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+                        className="h-full w-[170vw] md:w-[130vw] lg:w-[120vw] max-w-none object-fill opacity-60 pointer-events-none"
                     />
 
                     {/* Simple, clean overlay for readable text */}
