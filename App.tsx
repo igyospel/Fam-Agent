@@ -13,10 +13,11 @@ import { authService } from './services/authService';
 import { generateId, compressImageForStorage } from './utils';
 import { extractUrls, fetchUrlContent } from './utils/webScraper';
 import { Sparkles, ArrowRight, User, List, Mail, CheckCircle2 } from 'lucide-react';
+import CryptoTopUpModal from './components/CryptoTopUpModal';
 
 const STORAGE_KEY = 'fam_agent_histories';
 const WORKSPACE_KEY = 'fam_agent_active_workspace';
-
+ok
 // Load chat histories from localStorage
 const loadHistories = (): Record<string, Message[]> => {
   try {
@@ -75,6 +76,18 @@ const App: React.FC = () => {
     isOpen: false,
     workspaceId: null
   });
+
+  // Credits & Payment
+  const [showTopUp, setShowTopUp] = useState(false);
+  const [credits, setCredits] = useState<number>(() => {
+    try { return parseInt(localStorage.getItem('fam_agent_credits') || '50', 10); } catch { return 50; }
+  });
+
+  const handleCreditsAdded = (amount: number) => {
+    const newBalance = credits + amount;
+    setCredits(newBalance);
+    localStorage.setItem('fam_agent_credits', String(newBalance));
+  };
 
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -407,6 +420,8 @@ const App: React.FC = () => {
           isChatActive={!showLanding}
           onHistory={() => showToast("History synced to cloud.")}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          credits={credits}
+          onTopUp={() => setShowTopUp(true)}
         />
 
         <main className="flex-1 overflow-y-auto custom-scrollbar relative w-full overscroll-none">
@@ -502,6 +517,15 @@ const App: React.FC = () => {
         user={user}
         onUpdateUser={handleUpdateUser}
       />
+
+      {/* Crypto Top-Up Modal */}
+      {showTopUp && (
+        <CryptoTopUpModal
+          onClose={() => setShowTopUp(false)}
+          onCreditsAdded={handleCreditsAdded}
+          currentCredits={credits}
+        />
+      )}
     </div>
   );
 };

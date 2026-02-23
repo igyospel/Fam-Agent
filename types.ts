@@ -27,4 +27,5 @@ export interface User {
   email: string;
   avatar?: string;
   role?: 'user' | 'dev';
+  credits?: number;
 }

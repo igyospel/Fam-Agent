@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Share2, Mail, Bell, RotateCcw, Menu } from 'lucide-react';
+import { Share2, Mail, Bell, RotateCcw, Menu, Zap } from 'lucide-react';
 
 interface HeaderProps {
   isChatActive: boolean;
   onHistory: () => void;
   onToggleSidebar: () => void;
+  credits?: number;
+  onTopUp?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ isChatActive, onHistory, onToggleSidebar }) => {
+const Header: React.FC<HeaderProps> = ({ isChatActive, onHistory, onToggleSidebar, credits = 0, onTopUp }) => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
@@ -43,6 +45,16 @@ const Header: React.FC<HeaderProps> = ({ isChatActive, onHistory, onToggleSideba
         </button>
 
         <div className="h-6 w-[1px] bg-white/10 mx-1 hidden sm:block"></div>
+
+        {/* Credits Badge */}
+        <button
+          onClick={onTopUp}
+          className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500/15 to-amber-500/15 border border-orange-500/30 text-orange-400 px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:from-orange-500/30 hover:to-amber-500/30 hover:border-orange-500 hover:scale-105 active:scale-95"
+          title="Top Up Credits"
+        >
+          <Zap size={12} className="fill-orange-400" />
+          {credits.toLocaleString()} cr
+        </button>
 
         <div className="flex items-center">
           <button className="p-2 text-gray-400 hover:text-white hover:bg-white/5 rounded-full transition-colors tooltip" title="Share">
