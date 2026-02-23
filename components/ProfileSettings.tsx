@@ -143,18 +143,6 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ isOpen, onClose, user
     saveApiKeys(updated);
   };
 
-  const handleSimulateUsage = (id: string) => {
-    // Generate a random mocked API cost between $0.01 and $2.50
-    const addedCost = (Math.random() * 2.50) + 0.01;
-    const updated = apiKeys.map(k => {
-      if (k.id === id) {
-        return { ...k, usage: (k.usage || 0) + addedCost };
-      }
-      return k;
-    });
-    setApiKeys(updated);
-    saveApiKeys(updated);
-  };
   const handleRemoveApiKey = (id: string) => {
     const updated = apiKeys.filter(k => k.id !== id);
     setApiKeys(updated);
@@ -451,13 +439,6 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ isOpen, onClose, user
                           </span>
                         </div>
                         <div className="col-span-12 lg:col-span-3 flex items-center justify-end gap-2 w-full mt-2 sm:mt-0">
-                          <button
-                            onClick={() => handleSimulateUsage(apiKey.id)}
-                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 p-2 text-orange-400 hover:text-white bg-orange-500/10 hover:bg-orange-500 rounded-lg transition-colors border border-transparent"
-                            title="Simulate API calls (Demo)"
-                          >
-                            <Activity size={14} />
-                          </button>
                           <button
                             onClick={() => handleCopyApiKey(apiKey.key)}
                             className="flex-1 sm:flex-none flex items-center justify-center gap-2 p-2 text-gray-400 hover:text-white bg-black/30 hover:bg-black/50 rounded-lg transition-colors border border-transparent hover:border-white/10"
