@@ -20,14 +20,14 @@ export async function* streamLLMResponse(
     const hasDocs = attachments.some(att => !att.mimeType.startsWith("image/"));
 
     // If OpenRouter API Key is missing:
-    // 1. Fallback to Google AI Studio Free Tier (Gemini) if there are images.
-    // 2. Fallback to 100% FREE NO-KEY proxy (Pollinations AI) if text only.
+    // 1. Fallback to Google AI Studio Free Tier (Gemini) for everything if the key exists (15 RPM limit).
+    // 2. Fallback to 100% FREE NO-KEY proxy (Pollinations AI) if we have literally no keys at all.
     if (!API_KEY) {
-        if (hasImages && import.meta.env.VITE_GEMINI_API_KEY) {
-            console.log("[LLM] Route: Direct Free Gemini API (Image detected, no OpenRouter Key)");
+        if (import.meta.env.VITE_GEMINI_API_KEY) {
+            console.log("[LLM] Route: Direct Free Gemini API (SLA 0%, No Privacy) - No OpenRouter Key found.");
             return yield* streamGeminiResponse(history, currentMessageText, attachments);
         } else {
-            console.warn("[WARNING] No OpenRouter API Key found. Falling back to FREE public community API (Pollinations.ai).");
+            console.warn("[WARNING] No OpenRouter API Key and No Gemini Key found. Falling back to FREE public community API (Pollinations.ai).");
             return yield* streamFreeResponse(history, currentMessageText, attachments);
         }
     }
