@@ -17,7 +17,7 @@ import CryptoTopUpModal from './components/CryptoTopUpModal';
 
 const STORAGE_KEY = 'fam_agent_histories';
 const WORKSPACE_KEY = 'fam_agent_active_workspace';
-ok
+
 // Load chat histories from localStorage
 const loadHistories = (): Record<string, Message[]> => {
   try {
