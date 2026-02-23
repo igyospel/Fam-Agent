@@ -3,7 +3,8 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { Message } from '../types';
-import { User, Sparkles, FileText, AlertCircle } from 'lucide-react';
+import { User, Sparkles, FileText, AlertCircle, Download, FileJson } from 'lucide-react';
+import { generateWordDocument, generatePdfDocument } from '../utils/documentGenerator';
 
 /**
  * Convert various LaTeX delimiter styles to the $ / $$ format that
@@ -84,21 +85,67 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
               </div>
             )}
 
-            {/* Text Content */}
+            {/* Text / Document Content */}
             <div className={`
-              prose max-w-none break-words
-              ${isUser
+                prose max-w-none break-words
+                ${isUser
                 ? 'prose-p:text-white prose-strong:text-white prose-a:text-white prose-headings:text-white text-[15px] leading-relaxed'
                 : 'prose-sm md:prose-base prose-headings:text-white prose-p:text-gray-300 prose-strong:text-orange-400 prose-a:text-blue-400 hover:prose-a:text-blue-300 prose-ul:text-gray-300 prose-ol:text-gray-300 prose-code:bg-black/50 prose-code:text-amber-400 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:font-medium prose-pre:bg-[#0A0A0A] prose-pre:text-gray-200 prose-pre:border prose-pre:border-white/5 prose-pre:rounded-xl prose-pre:shadow-2xl prose-p:leading-snug prose-li:leading-snug'
               }
-            `}>
+              `}>
               {message.text ? (
-                <ReactMarkdown
-                  remarkPlugins={[remarkMath]}
-                  rehypePlugins={[rehypeKatex]}
-                >
-                  {preprocessLatex(message.text)}
-                </ReactMarkdown>
+                message.text.includes('<document') ? (
+                  (() => {
+                    // Attempt to parse out document parts
+                    // Format: <document type="pdf" title="Report">...content...</document>
+                    const docRegex = /<document\s+type="([^"]+)"\s*title="([^"]+)">([\s\S]*?)<\/document>/i;
+                    const match = docRegex.exec(message.text);
+
+                    if (match && !isUser) {
+                      const type = match[1].toLowerCase();
+                      const title = match[2];
+                      const content = match[3];
+
+                      return (
+                        <div className="flex flex-col gap-3 my-2">
+                          <div className="flex items-center gap-3 p-4 bg-black/40 border border-orange-500/30 rounded-2xl shadow-[0_0_15px_-5px_rgba(249,115,22,0.3)]">
+                            <div className="p-3 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl shadow-inner">
+                              {type === 'pdf' ? <FileJson className="text-white" size={24} /> : <FileText className="text-white" size={24} />}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-sm font-bold text-white truncate">{title}.{type === 'pdf' ? 'pdf' : 'docx'}</h4>
+                              <p className="text-xs text-gray-400">Agent Arga Auto-Generated Document</p>
+                            </div>
+                            <button
+                              onClick={() => type === 'pdf' ? generatePdfDocument(title, content) : generateWordDocument(title, content)}
+                              className="flex items-center justify-center p-2.5 bg-white/5 hover:bg-orange-500/20 text-orange-400 hover:text-orange-300 rounded-xl transition-colors border border-transparent hover:border-orange-500/30"
+                              title="Download Document"
+                            >
+                              <Download size={18} />
+                            </button>
+                          </div>
+
+                          {/* Optional: Render any extra text that isn't the document */}
+                          {message.text.replace(match[0], '').trim() && (
+                            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                              {preprocessLatex(message.text.replace(match[0], '').trim())}
+                            </ReactMarkdown>
+                          )}
+                        </div>
+                      );
+                    }
+
+                    // Fallback if regex fails to perfectly capture (e.g., during stream)
+                    return <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{preprocessLatex(message.text)}</ReactMarkdown>;
+                  })()
+                ) : (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                  >
+                    {preprocessLatex(message.text)}
+                  </ReactMarkdown>
+                )
               ) : (
                 message.isStreaming && (
                   <div className="flex items-center gap-1.5 h-6 opacity-70 px-2">
