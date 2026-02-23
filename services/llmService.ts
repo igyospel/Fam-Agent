@@ -2,14 +2,20 @@ import { Message, Attachment } from "../types";
 import { SYSTEM_INSTRUCTION } from "../constants";
 import { streamGeminiResponse } from "./geminiService";
 
-const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "";
-const API_URL = "https://openrouter.ai/api/v1/chat/completions";
+// OpenRouter is now also proxied through our server — no secrets in browser!
+// The client simply uses our /api/v1/generate for Gemini (free tier)
+// or falls back to Pollinations if the proxy is down.
+const PROXY_URL = '/api/v1/generate';
 
-// Llama 3.3 70B Instruct: Exceptionally brilliant reasoning, highly nuanced output, extremely cheap.
+// For paid-tier users who still want direct OpenRouter routing,
+// they can optionally store their own key via Settings.
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || ''; // Optional — only for premium fallback
+
+// Llama 3.3 70B Instruct: Exceptionally brilliant reasoning, extremely cheap via OpenRouter.
 const MODEL_DEFAULT = "meta-llama/llama-3.3-70b-instruct";
-// Gemini 2.5 Flash: Very fast, super cheap, great vision capabilities (Llama doesn't support images)
+// Gemini 2.5 Flash via OpenRouter: vision capable fallback for premium users.
 const MODEL_VISION = "google/gemini-2.5-flash";
-// Perplexity Sonar: real-time web search built-in
+// Perplexity Sonar: real-time web search built-in.
 const MODEL_WEB_SEARCH = "perplexity/sonar";
 
 export async function* streamLLMResponse(
@@ -21,17 +27,14 @@ export async function* streamLLMResponse(
     const hasImages = attachments.some(att => att.mimeType.startsWith("image/"));
     const hasDocs = attachments.some(att => !att.mimeType.startsWith("image/"));
 
-    // If OpenRouter API Key is missing:
-    // 1. Fallback to Google AI Studio Free Tier (Gemini) for everything if the key exists (15 RPM limit).
-    // 2. Fallback to 100% FREE NO-KEY proxy (Pollinations AI) if we have literally no keys at all.
-    if (!API_KEY) {
-        if (import.meta.env.VITE_GEMINI_API_KEY) {
-            console.log("[LLM] Route: Direct Free Gemini API (SLA 0%, No Privacy) - No OpenRouter Key found.");
-            return yield* streamGeminiResponse(history, currentMessageText, attachments);
-        } else {
-            console.warn("[WARNING] No OpenRouter API Key and No Gemini Key found. Falling back to FREE public community API (Pollinations.ai).");
-            return yield* streamFreeResponse(history, currentMessageText, attachments);
-        }
+    // Routing Strategy:
+    // 1. DEFAULT (Free): Use our secure Gemini proxy (/api/v1/generate) — keys rotate server-side
+    // 2. OPTIONAL Premium: If user has their own VITE_OPENROUTER_API_KEY in Settings, use OpenRouter
+    // 3. LAST RESORT: Pollinations AI (no key required, less capable)
+    if (!OPENROUTER_API_KEY) {
+        // Route via our secure serverless proxy (free Gemini with key rotation)
+        console.log("[LLM] Route: Secure Gemini Proxy /api/v1/generate (keys server-side, rotating)");
+        return yield* streamGeminiResponse(history, currentMessageText, attachments);
     }
 
     // Select appropriate Model
@@ -115,11 +118,11 @@ export async function* streamLLMResponse(
             max_tokens: 4096
         };
 
-        const response = await fetch(API_URL, {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${API_KEY}`,
+                "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
                 "HTTP-Referer": "https://agentarga.fun",
                 "X-Title": "Agent Arga",
                 "Accept": "text/event-stream"

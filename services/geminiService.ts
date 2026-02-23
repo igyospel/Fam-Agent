@@ -1,16 +1,14 @@
-import { GoogleGenAI } from "@google/genai";
+/**
+ * geminiService.ts
+ * 
+ * All Gemini calls now go through our secure serverless proxy at /api/v1/generate.
+ * API Keys are NEVER sent to or stored in the browser.
+ */
 import { Message, Attachment } from "../types";
-import { GEMINI_MODEL, SYSTEM_INSTRUCTION } from "../constants";
+import { SYSTEM_INSTRUCTION } from "../constants";
 
-// Retrieve Gemini API Key from Vite environments
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
-
-const getGeminiClient = () => {
-  if (!GEMINI_API_KEY) {
-    throw new Error("Missing VITE_GEMINI_API_KEY in environment variables. Vision/Image features are disabled for free users.");
-  }
-  return new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-};
+// Our own proxy endpoint (serverless function on Vercel)
+const PROXY_URL = '/api/v1/generate';
 
 export async function* streamGeminiResponse(
   history: Message[],
@@ -18,54 +16,98 @@ export async function* streamGeminiResponse(
   attachments: Attachment[]
 ) {
   try {
-    // Transform history for the API
-    // We only send text history for context to keep things simple for this demo, 
-    // but typically you'd send previous images too if the model supports multi-turn vision well.
-    // For this implementation, we'll focus on the current turn having images/docs.
-    const historyContents = history
-      .filter(m => !m.isError)
-      .map(m => ({
-        role: m.role,
-        parts: [{ text: m.text }]
-      }));
+    // Build OpenAI-compatible messages for the proxy
+    const messages: any[] = [
+      // History (text only for context efficiency)
+      ...history
+        .filter(m => !m.isError && m.id !== 'system-init')
+        .map(m => ({
+          role: m.role === 'model' ? 'assistant' : 'user',
+          content: m.text
+        }))
+    ];
 
-    // Current user message parts
-    const currentParts: any[] = [];
+    // Build current user message
+    // If has attachments (images/docs), use multi-part content array
+    if (attachments.length > 0) {
+      const parts: any[] = [];
 
-    // Add attachments
-    attachments.forEach(att => {
-      currentParts.push({
-        inlineData: {
-          mimeType: att.mimeType,
-          data: att.base64
+      attachments.forEach(att => {
+        if (att.mimeType.startsWith('image/') && att.base64) {
+          // Image as inline data
+          parts.push({
+            type: 'image',
+            mimeType: att.mimeType,
+            data: att.base64
+          });
+        } else if (att.textContent) {
+          // Document extracted as text
+          parts.push({
+            type: 'text',
+            text: `[File: ${att.file.name}]\n${att.textContent}`
+          });
         }
       });
-    });
 
-    // Add text
-    if (currentMessageText) {
-      currentParts.push({ text: currentMessageText });
+      if (currentMessageText) {
+        parts.push({ type: 'text', text: currentMessageText });
+      }
+
+      messages.push({ role: 'user', content: parts });
+    } else {
+      messages.push({ role: 'user', content: currentMessageText });
     }
 
-    const chat = getGeminiClient().chats.create({
-      model: GEMINI_MODEL,
-      config: {
+    // Call our secure proxy
+    const response = await fetch(PROXY_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages,
         systemInstruction: SYSTEM_INSTRUCTION,
-      },
-      history: historyContents // Pre-load conversation history
+        stream: true
+      })
     });
 
-    const result = await chat.sendMessageStream({ message: currentParts });
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Proxy error: ${response.status}`);
+    }
 
-    for await (const chunk of result) {
-      // chunk is GenerateContentResponse
-      if (chunk.text) {
-        yield chunk.text;
+    // Stream SSE response
+    const reader = response.body?.getReader();
+    if (!reader) throw new Error('No response stream');
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || !trimmed.startsWith('data: ')) continue;
+
+        const dataStr = trimmed.slice(6);
+        if (dataStr === '[DONE]') break;
+
+        try {
+          const parsed = JSON.parse(dataStr);
+          const text = parsed?.choices?.[0]?.delta?.content;
+          if (text) yield text;
+        } catch {
+          // Skip malformed SSE chunks
+        }
       }
     }
 
-  } catch (error) {
-    console.error("Gemini API Error:", error);
+  } catch (error: any) {
+    console.error('[GeminiService] Proxy Error:', error.message);
     throw error;
   }
 }
