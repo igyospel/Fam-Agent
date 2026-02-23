@@ -80,7 +80,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
             loop
             muted
             playsInline
-            className="absolute top-1/2 left-1/2 min-w-full min-h-full w-auto h-auto max-w-none -translate-x-1/2 -translate-y-1/2 object-cover opacity-50 scale-[1.05]"
+            className="absolute inset-0 w-full h-full object-cover opacity-50 object-[center_center]"
           />
           {/* Gradients to blend video smoothly */}
           <div className="absolute inset-0 bg-black/40 z-10" />

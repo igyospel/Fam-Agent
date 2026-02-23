@@ -58,7 +58,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         loop
                         muted
                         playsInline
-                        className="absolute inset-0 w-full h-full object-cover opacity-60 scale-[1.05] md:scale-[1.10]"
+                        className="absolute inset-0 w-full h-full object-cover opacity-60 object-[center_center]"
                     />
 
                     {/* Simple, clean overlay for readable text */}
