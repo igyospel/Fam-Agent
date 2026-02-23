@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { Message } from '../types';
-import { User, Sparkles, FileText, AlertCircle, Download, FileJson } from 'lucide-react';
+import { User, Sparkles, FileText, AlertCircle, Download, FileJson, Globe } from 'lucide-react';
 import { generateWordDocument, generatePdfDocument } from '../utils/documentGenerator';
 import MermaidChart from './MermaidChart';
 
@@ -186,7 +186,12 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                   </ReactMarkdown>
                 )
               ) : (
-                message.isStreaming && (
+                message.isReadingLink ? (
+                  <div className="flex items-center gap-2 h-6 px-2 text-orange-400 font-medium text-sm animate-pulse">
+                    <Globe size={16} className="animate-spin-slow" />
+                    <span>Membaca isi tautan...</span>
+                  </div>
+                ) : message.isStreaming && (
                   <div className="flex items-center gap-1.5 h-6 opacity-70 px-2">
                     <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                     <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>

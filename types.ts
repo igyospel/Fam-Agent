@@ -14,6 +14,7 @@ export interface Message {
   timestamp: number;
   isStreaming?: boolean;
   isError?: boolean;
+  isReadingLink?: boolean;
 }
 
 export interface ChatState {

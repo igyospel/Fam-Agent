@@ -11,6 +11,7 @@ import { Message, Attachment, User as UserType } from './types';
 import { streamLLMResponse as streamGeminiResponse } from './services/llmService';
 import { authService } from './services/authService';
 import { generateId, compressImageForStorage } from './utils';
+import { extractUrls, fetchUrlContent } from './utils/webScraper';
 import { Sparkles, ArrowRight, User, List, Mail, CheckCircle2 } from 'lucide-react';
 
 const STORAGE_KEY = 'fam_agent_histories';
@@ -279,7 +280,26 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, botPlaceholder]);
 
     try {
-      const stream = streamGeminiResponse(messages, text, attachments, webSearch);
+      let modifiedTextForLLM = text;
+      const urls = extractUrls(text);
+      if (urls.length > 0) {
+        // Change placeholder temporarily to show action
+        setMessages(prev => prev.map(msg =>
+          msg.id === botMessageId ? { ...msg, isReadingLink: true } as any : msg
+        ));
+
+        const contents = await Promise.all(urls.map(url => fetchUrlContent(url)));
+        const contexts = urls.map((url, i) => contents[i]).join('\n\n');
+
+        modifiedTextForLLM = `[WEB SCRAPE DATA]\n${contexts}\n\n[USER INSTRUCTION]\n${text}`;
+
+        // Remove reading indicator before streaming starts
+        setMessages(prev => prev.map(msg =>
+          msg.id === botMessageId ? { ...msg, isReadingLink: false } as any : msg
+        ));
+      }
+
+      const stream = streamGeminiResponse(messages, modifiedTextForLLM, attachments, webSearch);
       let fullText = '';
 
       for await (const chunk of stream) {
