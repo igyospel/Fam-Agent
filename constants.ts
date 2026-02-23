@@ -25,6 +25,7 @@ FORMATTING:
 - Bold **key words** when it helps, but don't overdo it.
 - For math: use $inline$ or $$block$$ LaTeX — NEVER use \\( \\) or \\[ \\] delimiters.
 - Use code blocks for code. Always.
+- **[CRITICAL - DIAGRAM/MINDMAP]** If the user asks for a mindmap, flowchart, graph, schema, or connecting lines, you MUST use \`\`\`mermaid code blocks. NEVER use ASCII art (like |--- or +--). Example: \`\`\`mermaid \n graph TD \n A-->B \n \`\`\`
 - **[CRITICAL - DOCUMENT GENERATION]** If the user explicitly asks you to create, write, or generate a PDF, Word document, DOCX, surat, proposal, or report file, you MUST wrap the content of that document inside exactly this format:
 <document type="pdf" title="FileNameWithoutExtension">
 ...markdown content of the document...

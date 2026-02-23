@@ -5,6 +5,7 @@ import rehypeKatex from 'rehype-katex';
 import { Message } from '../types';
 import { User, Sparkles, FileText, AlertCircle, Download, FileJson } from 'lucide-react';
 import { generateWordDocument, generatePdfDocument } from '../utils/documentGenerator';
+import MermaidChart from './MermaidChart';
 
 /**
  * Convert various LaTeX delimiter styles to the $ / $$ format that
@@ -127,7 +128,20 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
 
                           {/* Optional: Render any extra text that isn't the document */}
                           {message.text.replace(match[0], '').trim() && (
-                            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkMath]}
+                              rehypePlugins={[rehypeKatex]}
+                              components={{
+                                code(props) {
+                                  const { children, className, node, ...rest } = props;
+                                  const match = /language-(\w+)/.exec(className || '');
+                                  if (match && match[1] === 'mermaid') {
+                                    return <MermaidChart chart={String(children).replace(/\n$/, '')} />;
+                                  }
+                                  return <code {...rest} className={className}>{children}</code>;
+                                }
+                              }}
+                            >
                               {preprocessLatex(message.text.replace(match[0], '').trim())}
                             </ReactMarkdown>
                           )}
@@ -136,12 +150,37 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                     }
 
                     // Fallback if regex fails to perfectly capture (e.g., during stream)
-                    return <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{preprocessLatex(message.text)}</ReactMarkdown>;
+                    return <ReactMarkdown
+                      remarkPlugins={[remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={{
+                        code(props) {
+                          const { children, className, node, ...rest } = props;
+                          const match = /language-(\w+)/.exec(className || '');
+                          if (match && match[1] === 'mermaid') {
+                            return <MermaidChart chart={String(children).replace(/\n$/, '')} />;
+                          }
+                          return <code {...rest} className={className}>{children}</code>;
+                        }
+                      }}
+                    >
+                      {preprocessLatex(message.text)}
+                    </ReactMarkdown>;
                   })()
                 ) : (
                   <ReactMarkdown
                     remarkPlugins={[remarkMath]}
                     rehypePlugins={[rehypeKatex]}
+                    components={{
+                      code(props) {
+                        const { children, className, node, ...rest } = props;
+                        const match = /language-(\w+)/.exec(className || '');
+                        if (match && match[1] === 'mermaid') {
+                          return <MermaidChart chart={String(children).replace(/\n$/, '')} />;
+                        }
+                        return <code {...rest} className={className}>{children}</code>;
+                      }
+                    }}
                   >
                     {preprocessLatex(message.text)}
                   </ReactMarkdown>
