@@ -15,12 +15,14 @@ export async function* streamLLMResponse(
     attachments: Attachment[],
     webSearch: boolean = false
 ) {
-    if (!API_KEY) {
-        throw new Error("OpenRouter API Key tidak ditemukan. Pastikan VITE_OPENROUTER_API_KEY sudah diisi di .env.local");
-    }
-
     const hasImages = attachments.some(att => att.mimeType.startsWith("image/"));
     const hasDocs = attachments.some(att => !att.mimeType.startsWith("image/"));
+
+    // If API Key is missing, fallback to 100% FREE NO-KEY proxy (Pollinations AI)
+    if (!API_KEY) {
+        console.warn("[WARNING] No OpenRouter API Key found. Falling back to FREE public community API (Pollinations.ai).");
+        return yield* streamFreeResponse(history, currentMessageText, attachments);
+    }
 
     // Perplexity Sonar doesn't support vision — fallback to MiniMax if there are images
     const modelId = (webSearch && !hasImages) ? MODEL_WEB_SEARCH : MODEL_DEFAULT;
@@ -153,5 +155,67 @@ export async function* streamLLMResponse(
     } catch (error) {
         console.error("OpenRouter API Error:", error);
         throw error;
+    }
+}
+
+/**
+ * Fallback AI function that uses Pollinations.ai (100% Free, No API Key required)
+ */
+async function* streamFreeResponse(
+    history: Message[],
+    currentMessageText: string,
+    attachments: Attachment[]
+) {
+    // Build context
+    let prompt = `${SYSTEM_INSTRUCTION}\n\n`;
+
+    // Add history
+    for (const m of history.filter(m => !m.isError && m.id !== 'system-init')) {
+        prompt += `${m.role === 'model' ? 'Assistant' : 'User'}: ${m.text}\n`;
+    }
+
+    // Add current context
+    const hasDocs = attachments.some(att => !att.mimeType.startsWith("image/"));
+    if (hasDocs) {
+        const docTexts = attachments
+            .filter(att => !att.mimeType.startsWith("image/"))
+            .map(att => att.textContent
+                ? `[Document: ${att.file.name}]\n${att.textContent}`
+                : "")
+            .join("\n\n");
+        if (docTexts) prompt += `\nDocumentation Context:\n${docTexts}\n\n`;
+    }
+
+    prompt += `User: ${currentMessageText}\nAssistant:`;
+
+    try {
+        // Pollinations text endpoint is just a GET/POST that returns full text, not a stream
+        // For a stream simulation, we will fetch the full text and yield it in chunks
+        const response = await fetch("https://text.pollinations.ai/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                messages: [{ role: "user", content: prompt }],
+                model: "openai", // Uses community proxy
+                seed: Math.floor(Math.random() * 1000000)
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Free API Error: ${response.status}`);
+        }
+
+        const fullText = await response.text();
+
+        // Simulate streaming effect for UI consistency
+        const chunkSize = 5;
+        for (let i = 0; i < fullText.length; i += chunkSize) {
+            yield fullText.slice(i, i + chunkSize);
+            await new Promise(resolve => setTimeout(resolve, 20)); // Fake stream delay
+        }
+
+    } catch (err: any) {
+        yield "\n\n*(Error: The free community API is currently overloaded or blocked by cross-origin policies. Please configure an API Key in Vercel/Environment Variables for reliable access).*";
+        console.error("Free API Error:", err);
     }
 }
