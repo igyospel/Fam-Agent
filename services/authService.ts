@@ -18,7 +18,7 @@ export const authService = {
             setTimeout(() => {
                 try {
                     // CEO Master Backdoor
-                    if (email.toLowerCase() === 'arga@ceo.com' && password === 'admin123') { // Replace password in DB later if desired
+                    if (email.trim().toLowerCase() === 'arga@ceo.com' && password === 'admin123') { // Replace password in DB later if desired
                         return resolve({
                             name: 'Boss Arga',
                             email: 'arga@ceo.com',
