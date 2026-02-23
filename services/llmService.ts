@@ -1,5 +1,6 @@
 import { Message, Attachment } from "../types";
 import { SYSTEM_INSTRUCTION } from "../constants";
+import { streamGeminiResponse } from "./geminiService";
 
 const API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || "";
 const API_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -18,10 +19,17 @@ export async function* streamLLMResponse(
     const hasImages = attachments.some(att => att.mimeType.startsWith("image/"));
     const hasDocs = attachments.some(att => !att.mimeType.startsWith("image/"));
 
-    // If API Key is missing, fallback to 100% FREE NO-KEY proxy (Pollinations AI)
+    // If OpenRouter API Key is missing:
+    // 1. Fallback to Google AI Studio Free Tier (Gemini) if there are images.
+    // 2. Fallback to 100% FREE NO-KEY proxy (Pollinations AI) if text only.
     if (!API_KEY) {
-        console.warn("[WARNING] No OpenRouter API Key found. Falling back to FREE public community API (Pollinations.ai).");
-        return yield* streamFreeResponse(history, currentMessageText, attachments);
+        if (hasImages && import.meta.env.VITE_GEMINI_API_KEY) {
+            console.log("[LLM] Route: Direct Free Gemini API (Image detected, no OpenRouter Key)");
+            return yield* streamGeminiResponse(history, currentMessageText, attachments);
+        } else {
+            console.warn("[WARNING] No OpenRouter API Key found. Falling back to FREE public community API (Pollinations.ai).");
+            return yield* streamFreeResponse(history, currentMessageText, attachments);
+        }
     }
 
     // Perplexity Sonar doesn't support vision — fallback to MiniMax if there are images

@@ -2,12 +2,18 @@ import { GoogleGenAI } from "@google/genai";
 import { Message, Attachment } from "../types";
 import { GEMINI_MODEL, SYSTEM_INSTRUCTION } from "../constants";
 
-// Initialize Gemini client
-// @ts-ignore - process.env.API_KEY is injected by the environment
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Retrieve Gemini API Key from Vite environments
+const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY || "";
+
+const getGeminiClient = () => {
+  if (!GEMINI_API_KEY) {
+    throw new Error("Missing VITE_GEMINI_API_KEY in environment variables. Vision/Image features are disabled for free users.");
+  }
+  return new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+};
 
 export async function* streamGeminiResponse(
-  history: Message[], 
+  history: Message[],
   currentMessageText: string,
   attachments: Attachment[]
 ) {
@@ -25,7 +31,7 @@ export async function* streamGeminiResponse(
 
     // Current user message parts
     const currentParts: any[] = [];
-    
+
     // Add attachments
     attachments.forEach(att => {
       currentParts.push({
@@ -41,7 +47,7 @@ export async function* streamGeminiResponse(
       currentParts.push({ text: currentMessageText });
     }
 
-    const chat = ai.chats.create({
+    const chat = getGeminiClient().chats.create({
       model: GEMINI_MODEL,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
@@ -49,11 +55,7 @@ export async function* streamGeminiResponse(
       history: historyContents // Pre-load conversation history
     });
 
-    const result = await chat.sendMessageStream({
-      message: {
-        parts: currentParts
-      }
-    });
+    const result = await chat.sendMessageStream({ message: currentParts });
 
     for await (const chunk of result) {
       // chunk is GenerateContentResponse
