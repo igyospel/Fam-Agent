@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Save, User, Mail, Users, Plus, Trash2, Send, Key, Copy, CheckCircle2 } from 'lucide-react';
+import { X, Camera, Save, User, Mail, Users, Plus, Trash2, Send, Key, Copy, CheckCircle2, DollarSign, Activity } from 'lucide-react';
 import { User as UserType } from '../types';
 
 interface ProfileSettingsProps {
@@ -37,6 +37,7 @@ interface ApiKey {
   id: string;
   key: string;
   createdAt: number;
+  usage?: number;
 }
 
 const API_KEY_STORAGE_KEY = 'agent_arga_api_keys';
@@ -134,13 +135,26 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ isOpen, onClose, user
     const newKey: ApiKey = {
       id: Math.random().toString(36).substring(2),
       key: newKeyStr,
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      usage: 0
     };
     const updated = [...apiKeys, newKey];
     setApiKeys(updated);
     saveApiKeys(updated);
   };
 
+  const handleSimulateUsage = (id: string) => {
+    // Generate a random mocked API cost between $0.01 and $2.50
+    const addedCost = (Math.random() * 2.50) + 0.01;
+    const updated = apiKeys.map(k => {
+      if (k.id === id) {
+        return { ...k, usage: (k.usage || 0) + addedCost };
+      }
+      return k;
+    });
+    setApiKeys(updated);
+    saveApiKeys(updated);
+  };
   const handleRemoveApiKey = (id: string) => {
     const updated = apiKeys.filter(k => k.id !== id);
     setApiKeys(updated);
@@ -416,30 +430,44 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ isOpen, onClose, user
                 ) : (
                   <div className="space-y-3">
                     <div className="hidden sm:grid grid-cols-12 gap-4 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      <div className="col-span-5">Secret Key</div>
-                      <div className="col-span-4">Created</div>
+                      <div className="col-span-4">Secret Key</div>
+                      <div className="col-span-3">Created</div>
+                      <div className="col-span-2 text-right">Usage</div>
                       <div className="col-span-3 text-right">Actions</div>
                     </div>
                     {apiKeys.map(apiKey => (
                       <div key={apiKey.id} className="flex flex-col sm:grid sm:grid-cols-12 items-start sm:items-center gap-3 sm:gap-4 p-4 border border-white/10 rounded-2xl bg-white/5 hover:bg-white/10 transition-all">
-                        <div className="col-span-12 lg:col-span-5 w-full flex items-center font-mono text-[10px] md:text-xs text-white/90 bg-black/40 px-3 py-2 rounded-lg border border-white/5 overflow-hidden text-ellipsis whitespace-nowrap">
+                        <div className="col-span-12 lg:col-span-4 w-full flex items-center font-mono text-[10px] md:text-xs text-white/90 bg-black/40 px-3 py-2 rounded-lg border border-white/5 overflow-hidden text-ellipsis whitespace-nowrap">
                           {apiKey.key}
                         </div>
-                        <div className="col-span-6 lg:col-span-4 text-[10px] md:text-xs text-gray-500 w-full">
-                          {new Date(apiKey.createdAt).toLocaleDateString()} {new Date(apiKey.createdAt).toLocaleTimeString()}
+                        <div className="col-span-12 lg:col-span-3 text-[10px] md:text-xs text-gray-500 w-full flex sm:block justify-between items-center sm:text-left border-b border-white/5 pb-2 sm:pb-0 sm:border-0">
+                          <span className="sm:hidden font-semibold text-gray-400">Created:</span>
+                          <span>{new Date(apiKey.createdAt).toLocaleDateString()}</span>
                         </div>
-                        <div className="col-span-6 lg:col-span-3 flex items-center sm:justify-end gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                        <div className="col-span-12 lg:col-span-2 w-full flex sm:block justify-between items-center sm:text-right border-b border-white/5 pb-2 sm:pb-0 sm:border-0 text-sm font-medium">
+                          <span className="sm:hidden font-semibold text-gray-400">Cost:</span>
+                          <span className={`${(apiKey.usage || 0) > 0 ? 'text-green-400' : 'text-gray-500'}`}>
+                            ${(apiKey.usage || 0).toFixed(4)}
+                          </span>
+                        </div>
+                        <div className="col-span-12 lg:col-span-3 flex items-center justify-end gap-2 w-full mt-2 sm:mt-0">
+                          <button
+                            onClick={() => handleSimulateUsage(apiKey.id)}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 p-2 text-orange-400 hover:text-white bg-orange-500/10 hover:bg-orange-500 rounded-lg transition-colors border border-transparent"
+                            title="Simulate API calls (Demo)"
+                          >
+                            <Activity size={14} />
+                          </button>
                           <button
                             onClick={() => handleCopyApiKey(apiKey.key)}
-                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-1.5 md:p-2 text-gray-400 hover:text-white bg-black/30 hover:bg-black/50 rounded-lg transition-colors border border-transparent hover:border-white/10"
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 p-2 text-gray-400 hover:text-white bg-black/30 hover:bg-black/50 rounded-lg transition-colors border border-transparent hover:border-white/10"
                             title="Copy key"
                           >
                             {copiedKey === apiKey.key ? <CheckCircle2 size={14} className="text-green-400" /> : <Copy size={14} />}
-                            <span className="text-[10px] md:hidden">{copiedKey === apiKey.key ? 'Copied' : 'Copy'}</span>
                           </button>
                           <button
                             onClick={() => handleRemoveApiKey(apiKey.id)}
-                            className="p-1.5 md:p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                            className="flex-none p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                             title="Revoke key"
                           >
                             <Trash2 size={16} />
