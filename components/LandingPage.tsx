@@ -48,7 +48,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
             </nav>
 
             {/* --- HERO SECTION --- */}
-            <section className="relative h-[100dvh] flex flex-col items-center justify-center px-6 overflow-hidden">
+            <section className="relative h-[100dvh] flex flex-col items-center justify-center overflow-hidden">
                 {/* Clean Cinematic Video Background */}
                 <div className="absolute inset-0 w-full h-full z-0 overflow-hidden bg-black relative">
                     {/* The Video */}
@@ -58,7 +58,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                         loop
                         muted
                         playsInline
-                        className="absolute top-[60%] left-1/2 w-[150vw] h-[150vh] min-w-[150vw] min-h-[150vh] max-w-none -translate-x-1/2 -translate-y-1/2 object-cover opacity-60 pointer-events-none"
+                        className="absolute top-[65%] left-1/2 w-[180vw] h-[150vh] min-w-[180vw] min-h-[150vh] max-w-none -translate-x-1/2 -translate-y-1/2 object-fill opacity-60 pointer-events-none"
                     />
 
                     {/* Simple, clean overlay for readable text */}
@@ -67,7 +67,7 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                 </div>
 
                 {/* Hero Content */}
-                <div className="relative z-10 text-center max-w-5xl mx-auto mt-16 md:mt-0">
+                <div className="relative z-10 text-center max-w-5xl mx-auto px-6 mt-16 md:mt-0">
                     <h1 className="text-[3.5rem] md:text-7xl lg:text-[7.5rem] font-bold tracking-tighter leading-[1.05] text-white mb-6 animate-[fadeInUp_1s_ease-out_0.1s_both]">
                         Beyond Chat. <br className="md:hidden" />
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-200 to-orange-500 drop-shadow-lg">Pure Execution.</span>
