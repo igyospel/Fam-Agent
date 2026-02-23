@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Camera, Save, User, Mail, Users, Plus, Trash2, Send } from 'lucide-react';
+import { X, Camera, Save, User, Mail, Users, Plus, Trash2, Send, Key, Copy, CheckCircle2 } from 'lucide-react';
 import { User as UserType } from '../types';
 
 interface ProfileSettingsProps {
@@ -33,8 +33,29 @@ const saveTeam = (team: TeamMember[]) => {
 
 const ROLES = ['Admin', 'Editor', 'Viewer'];
 
+interface ApiKey {
+  id: string;
+  key: string;
+  createdAt: number;
+}
+
+const API_KEY_STORAGE_KEY = 'agent_arga_api_keys';
+
+const loadApiKeys = (): ApiKey[] => {
+  try {
+    const saved = localStorage.getItem(API_KEY_STORAGE_KEY);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveApiKeys = (keys: ApiKey[]) => {
+  localStorage.setItem(API_KEY_STORAGE_KEY, JSON.stringify(keys));
+};
+
 const ProfileSettings: React.FC<ProfileSettingsProps> = ({ isOpen, onClose, user, onUpdateUser }) => {
-  const [activeTab, setActiveTab] = useState<'profile' | 'team'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'team' | 'api'>('profile');
   const [formData, setFormData] = useState({
     name: user.name,
     email: user.email,
@@ -49,10 +70,15 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ isOpen, onClose, user
   const [inviteRole, setInviteRole] = useState('Viewer');
   const [showInviteForm, setShowInviteForm] = useState(false);
 
+  // API Key state
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>(loadApiKeys);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
   useEffect(() => {
     if (isOpen) {
       setFormData({ name: user.name, email: user.email, avatar: user.avatar || '' });
       setTeam(loadTeam());
+      setApiKeys(loadApiKeys());
     }
   }, [isOpen, user]);
 
@@ -103,6 +129,30 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ isOpen, onClose, user
     saveTeam(updated);
   };
 
+  const handleGenerateApiKey = () => {
+    const newKeyStr = 'sk-arga-' + Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const newKey: ApiKey = {
+      id: Math.random().toString(36).substring(2),
+      key: newKeyStr,
+      createdAt: Date.now()
+    };
+    const updated = [...apiKeys, newKey];
+    setApiKeys(updated);
+    saveApiKeys(updated);
+  };
+
+  const handleRemoveApiKey = (id: string) => {
+    const updated = apiKeys.filter(k => k.id !== id);
+    setApiKeys(updated);
+    saveApiKeys(updated);
+  };
+
+  const handleCopyApiKey = (keyStr: string) => {
+    navigator.clipboard.writeText(keyStr);
+    setCopiedKey(keyStr);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
   const avatarUrl = formData.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(formData.name || 'User')}&background=f97316&color=fff`;
 
   return (
@@ -136,6 +186,13 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ isOpen, onClose, user
               <Users size={18} />
               Team Members
             </button>
+            <button
+              onClick={() => setActiveTab('api')}
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${activeTab === 'api' ? 'bg-white/10 shadow-sm text-orange-400 border border-white/5' : 'text-gray-400 hover:bg-white/5'}`}
+            >
+              <Key size={18} />
+              Developer API
+            </button>
           </div>
 
           {/* Content Area */}
@@ -154,6 +211,12 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ isOpen, onClose, user
                 className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${activeTab === 'team' ? 'bg-white/10 shadow-sm text-white' : 'text-gray-400'}`}
               >
                 Team
+              </button>
+              <button
+                onClick={() => setActiveTab('api')}
+                className={`flex-1 py-2 text-xs font-medium rounded-md transition-all ${activeTab === 'api' ? 'bg-white/10 shadow-sm text-white' : 'text-gray-400'}`}
+              >
+                API
               </button>
             </div>
 
@@ -220,7 +283,7 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ isOpen, onClose, user
                 </div>
               </div>
 
-            ) : (
+            ) : activeTab === 'team' ? (
               /* ── TEAM TAB ── */
               <div className="space-y-6 animate-enter">
                 <div className="flex items-center justify-between mb-2">
@@ -325,6 +388,73 @@ const ProfileSettings: React.FC<ProfileSettingsProps> = ({ isOpen, onClose, user
                     ))}
                   </div>
                 )}
+              </div>
+            ) : (
+              /* ── API TAB ── */
+              <div className="space-y-6 animate-enter">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">API Keys</h3>
+                    <p className="text-sm text-gray-400">Manage your secret keys for API access.</p>
+                  </div>
+                  <button
+                    onClick={handleGenerateApiKey}
+                    className="bg-white/5 border border-white/10 text-orange-400 px-3 py-2 rounded-lg text-xs font-bold hover:bg-white/10 transition-colors flex items-center gap-2"
+                  >
+                    <Plus size={14} />
+                    <span className="hidden sm:inline">Create secret key</span>
+                    <span className="sm:hidden">Create</span>
+                  </button>
+                </div>
+
+                {apiKeys.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Key size={40} className="mx-auto mb-3 opacity-30" />
+                    <p className="text-sm font-medium">No API keys generated</p>
+                    <p className="text-xs mt-1">Create one to integrate Agent Arga into your applications</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <div className="hidden sm:grid grid-cols-12 gap-4 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+                      <div className="col-span-5">Secret Key</div>
+                      <div className="col-span-4">Created</div>
+                      <div className="col-span-3 text-right">Actions</div>
+                    </div>
+                    {apiKeys.map(apiKey => (
+                      <div key={apiKey.id} className="flex flex-col sm:grid sm:grid-cols-12 items-start sm:items-center gap-3 sm:gap-4 p-4 border border-white/10 rounded-2xl bg-white/5 hover:bg-white/10 transition-all">
+                        <div className="col-span-12 lg:col-span-5 w-full flex items-center font-mono text-[10px] md:text-xs text-white/90 bg-black/40 px-3 py-2 rounded-lg border border-white/5 overflow-hidden text-ellipsis whitespace-nowrap">
+                          {apiKey.key}
+                        </div>
+                        <div className="col-span-6 lg:col-span-4 text-[10px] md:text-xs text-gray-500 w-full">
+                          {new Date(apiKey.createdAt).toLocaleDateString()} {new Date(apiKey.createdAt).toLocaleTimeString()}
+                        </div>
+                        <div className="col-span-6 lg:col-span-3 flex items-center sm:justify-end gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                          <button
+                            onClick={() => handleCopyApiKey(apiKey.key)}
+                            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3 py-1.5 md:p-2 text-gray-400 hover:text-white bg-black/30 hover:bg-black/50 rounded-lg transition-colors border border-transparent hover:border-white/10"
+                            title="Copy key"
+                          >
+                            {copiedKey === apiKey.key ? <CheckCircle2 size={14} className="text-green-400" /> : <Copy size={14} />}
+                            <span className="text-[10px] md:hidden">{copiedKey === apiKey.key ? 'Copied' : 'Copy'}</span>
+                          </button>
+                          <button
+                            onClick={() => handleRemoveApiKey(apiKey.id)}
+                            className="p-1.5 md:p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="Revoke key"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="mt-8 p-4 bg-orange-500/10 border border-orange-500/20 rounded-2xl">
+                  <h4 className="text-sm font-bold text-orange-400 mb-2 flex items-center gap-2"><Key size={16} /> Base URL API Endpoint</h4>
+                  <code className="text-[10px] md:text-xs text-orange-300 font-mono break-all inline-block p-2 bg-black/50 rounded-lg border border-orange-500/20 my-2">https://agentarga.fun/api/v1/chat/completions</code>
+                  <p className="text-xs text-gray-400 mt-2">Built-in API endpoint that is perfectly compatible with the OpenAI spec wrapper (e.g., Cursor, Continue, AutoGPT, LLM packages). Simply use your newly generated <code className="text-orange-300">sk-arga-...</code> as a Bearer Token.</p>
+                </div>
               </div>
             )}
           </div>
