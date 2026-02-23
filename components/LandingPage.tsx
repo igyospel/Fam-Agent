@@ -64,8 +64,6 @@ const LandingPage: React.FC<LandingPageProps> = ({ onGetStarted }) => {
                     {/* Simple, clean overlay for readable text */}
                     <div className="absolute inset-0 bg-black/40" />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-[#050505]/40" />
-                    {/* Add horizontal vignette to elegantly mask any baked-in video letterboxing */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#050505] via-transparent to-[#050505]" />
                 </div>
 
                 {/* Hero Content */}
