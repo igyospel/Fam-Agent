@@ -15,16 +15,36 @@ export const authService = {
     login: async (email: string, password: string): Promise<User> => {
         return new Promise((resolve, reject) => {
             // Simulate API network delay
-            setTimeout(() => {
+            setTimeout(async () => {
                 try {
-                    // CEO Master Backdoor
                     const normEmail = email.trim().toLowerCase();
-                    if (normEmail === 'arga@ceo.com' || normEmail === 'arga@pro.com') {
+
+                    // Privileged accounts — password IS required and verified
+                    const PRIVILEGED: Record<string, { name: string; avatar: string; role: 'dev' | 'pro'; password: string }> = {
+                        'arga@ceo.com': {
+                            name: 'Boss Arga',
+                            avatar: 'https://cdn-icons-png.flaticon.com/512/3242/3242257.png',
+                            role: 'dev',
+                            password: 'admin123'  // Change this to your real password
+                        },
+                        'arga@pro.com': {
+                            name: 'Pro Member',
+                            avatar: 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
+                            role: 'pro',
+                            password: 'pro2024'   // Change this to your real password
+                        }
+                    };
+
+                    if (PRIVILEGED[normEmail]) {
+                        const account = PRIVILEGED[normEmail];
+                        if (password !== account.password) {
+                            return reject(new Error('Invalid password. Please try again.'));
+                        }
                         return resolve({
-                            name: normEmail === 'arga@ceo.com' ? 'Boss Arga' : 'Pro Member',
+                            name: account.name,
                             email: normEmail,
-                            avatar: normEmail === 'arga@ceo.com' ? 'https://cdn-icons-png.flaticon.com/512/3242/3242257.png' : 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
-                            role: normEmail === 'arga@ceo.com' ? 'dev' : 'pro'
+                            avatar: account.avatar,
+                            role: account.role
                         });
                     }
 
