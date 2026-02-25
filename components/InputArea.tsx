@@ -264,6 +264,23 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
                   <span className="hidden sm:inline">Upload Media</span>
                   <span className="sm:hidden">Media</span>
                 </button>
+                {/* Mic button on landing too */}
+                <button
+                  onClick={speechSupported ? toggleListening : () => alert('Voice input requires Chrome or Edge browser.')}
+                  title={speechSupported ? (isListening ? 'Stop listening' : 'Voice input') : 'Voice input requires Chrome/Edge'}
+                  className={`
+                    relative flex items-center gap-2 px-4 py-2 rounded-full border text-xs font-semibold transition-all shadow-md backdrop-blur-md
+                    ${isListening
+                      ? 'bg-red-500/20 border-red-500/30 text-red-400'
+                      : speechSupported
+                        ? 'bg-white/5 border-white/10 text-gray-300 hover:bg-white/10 hover:text-white'
+                        : 'bg-white/5 border-white/10 text-gray-600 cursor-not-allowed opacity-50'}
+                  `}
+                >
+                  {isListening && <span className="absolute inset-0 rounded-full animate-ping bg-red-500/20 pointer-events-none" />}
+                  {isListening ? <Square size={14} fill="currentColor" /> : <Mic size={14} className="text-red-400" />}
+                  <span className="hidden sm:inline">{isListening ? 'Stop' : 'Voice'}</span>
+                </button>
               </>
             ) : (
               <>
@@ -292,25 +309,24 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
                   <span className="hidden sm:inline">{webSearch ? 'Web ON' : 'Web OFF'}</span>
                 </button>
 
-                {/* Voice Input Button */}
-                {speechSupported && (
-                  <button
-                    onClick={toggleListening}
-                    title={isListening ? 'Stop listening' : 'Voice input — speak your message'}
-                    className={`
-                      relative p-2.5 rounded-xl transition-all duration-300
-                      ${isListening
+                {/* Voice Input Button — always visible, disabled if not supported */}
+                <button
+                  onClick={speechSupported ? toggleListening : () => alert('Voice input requires Chrome or Edge. Firefox is not supported.')}
+                  title={!speechSupported ? 'Voice input requires Chrome/Edge' : isListening ? 'Stop listening' : 'Voice input — speak your message'}
+                  className={`
+                    relative p-2.5 rounded-xl transition-all duration-300
+                    ${!speechSupported
+                      ? 'opacity-30 cursor-not-allowed text-gray-600 border border-transparent'
+                      : isListening
                         ? 'bg-red-500/15 text-red-400 border border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.2)]'
                         : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'}
-                    `}
-                  >
-                    {/* Pulse ring when listening */}
-                    {isListening && (
-                      <span className="absolute inset-0 rounded-xl animate-ping bg-red-500/20 pointer-events-none" />
-                    )}
-                    {isListening ? <Square size={16} fill="currentColor" /> : <Mic size={18} />}
-                  </button>
-                )}
+                  `}
+                >
+                  {isListening && (
+                    <span className="absolute inset-0 rounded-xl animate-ping bg-red-500/20 pointer-events-none" />
+                  )}
+                  {isListening ? <Square size={16} fill="currentColor" /> : <Mic size={18} />}
+                </button>
               </>
             )}
           </div>
