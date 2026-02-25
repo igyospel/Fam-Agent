@@ -89,6 +89,7 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
     const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
     const finalTextRef = useRef('');
     const spokenMessageRef = useRef('');
+    const audioRef = useRef<HTMLAudioElement | null>(null); // for ElevenLabs audio
 
     const stopListening = useCallback(() => {
         if (recognitionRef.current) {
@@ -102,6 +103,13 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
     }, []);
 
     const stopSpeaking = useCallback(() => {
+        // Stop ElevenLabs audio if playing
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = '';
+            audioRef.current = null;
+        }
+        // Stop browser TTS fallback
         window.speechSynthesis.cancel();
     }, []);
 
@@ -187,23 +195,70 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         recognition.start();
     }, [stopSpeaking, sendCurrentTranscript]);
 
-    const speakText = useCallback((text: string, onDone?: () => void) => {
+    const speakText = useCallback(async (text: string, onDone?: () => void) => {
         if (isMuted || !text.trim()) { onDone?.(); return; }
-        window.speechSynthesis.cancel();
+        stopSpeaking();
         const clean = stripMarkdown(text);
         if (!clean.trim()) { onDone?.(); return; }
 
         setVoiceState('speaking');
         setStatusText('Agent Arga is speaking...');
 
+        // Try ElevenLabs TTS via proxy first
+        try {
+            const res = await fetch('/api/v1/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: clean })
+            });
+
+            if (res.ok) {
+                // Stream audio via Blob URL
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const audio = new Audio(url);
+                audioRef.current = audio;
+                audio.playbackRate = 1.05;
+                audio.onended = () => {
+                    URL.revokeObjectURL(url);
+                    audioRef.current = null;
+                    onDone?.();
+                };
+                audio.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    audioRef.current = null;
+                    onDone?.();
+                };
+                await audio.play();
+                return; // success — don't fall through to browser TTS
+            }
+            // 503 = ElevenLabs not configured → fall through to browser TTS
+            if (res.status !== 503) {
+                console.warn('[TTS] ElevenLabs error:', res.status);
+            }
+        } catch (err) {
+            console.warn('[TTS] Proxy unreachable, using browser TTS fallback:', err);
+        }
+
+        // --- Fallback: browser SpeechSynthesis (robotic but always works) ---
         const utter = new SpeechSynthesisUtterance(clean);
-        utter.rate = 1.05;
+        utter.rate = 0.92;   // slightly slower = more natural
         utter.pitch = 1.0;
         utter.volume = 1.0;
 
         const assignVoice = () => {
-            const voice = getBestVoice(currentLang.code);
-            if (voice) utter.voice = voice;
+            const voices = window.speechSynthesis.getVoices();
+            // Priority: Google neural > Apple Samantha > any local
+            const priority = [
+                voices.find(v => v.name === 'Google UK English Female'),
+                voices.find(v => v.name === 'Google US English'),
+                voices.find(v => v.name === 'Samantha'),
+                voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')),
+                voices.find(v => v.localService && v.lang.startsWith('en')),
+                voices.find(v => v.lang.startsWith('en')),
+                voices[0],
+            ].find(Boolean);
+            if (priority) utter.voice = priority;
         };
 
         const voices = window.speechSynthesis.getVoices();
@@ -212,9 +267,8 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
 
         utter.onend = () => onDone?.();
         utter.onerror = () => onDone?.();
-
         window.speechSynthesis.speak(utter);
-    }, [isMuted, currentLang]);
+    }, [isMuted, stopSpeaking]);
 
     // When AI finishes → speak response → then listen again
     useEffect(() => {
