@@ -11,9 +11,10 @@ const GEMINI_KEY = process.env.GEMINI_KEY_1 || process.env.GEMINI_KEY_2 || proce
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || '';
 
 // ── Gemini TTS config ──────────────────────────────────────────────────────
+// Verified working with AI Studio free keys (AIzaSy...)
 // Available voices: Zephyr · Puck · Charon · Kore · Fenrir · Aoede · Leda · Orus
-const GEMINI_VOICE = 'Kore';     // bright, clear, natural — change to preference
-const GEMINI_MODEL = 'gemini-2.0-flash-exp';
+const GEMINI_VOICE = 'Kore';
+const GEMINI_MODEL = 'gemini-2.5-flash-preview-tts'; // dedicated TTS model — verified ✓
 
 // ── ElevenLabs config (if ELEVENLABS_API_KEY is set) ─────────────────────
 const EL_VOICE_ID = '21m00Tcm4TlvDq8ikWAM'; // Rachel — calm, professional
@@ -27,7 +28,8 @@ async function ttsViaGemini(text: string): Promise<Buffer | null> {
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_KEY}`;
 
     const body = {
-        contents: [{ parts: [{ text }] }],
+        // The dedicated TTS model requires this phrasing to output audio (not text)
+        contents: [{ role: 'user', parts: [{ text: `Say the following out loud: ${text}` }] }],
         generationConfig: {
             responseModalities: ['AUDIO'],
             speechConfig: {
