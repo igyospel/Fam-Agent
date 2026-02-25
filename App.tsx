@@ -7,12 +7,13 @@ import AuthScreen from './components/AuthScreen';
 import LandingPage from './components/LandingPage';
 import ProfileSettings from './components/ProfileSettings';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
+import VoiceChat from './components/VoiceChat';
 import { Message, Attachment, User as UserType } from './types';
 import { streamLLMResponse } from './services/llmService';
 import { authService } from './services/authService';
 import { generateId, compressImageForStorage } from './utils';
 import { extractUrls, fetchUrlContent } from './utils/webScraper';
-import { Sparkles, ArrowRight, User, List, Mail, CheckCircle2 } from 'lucide-react';
+import { Sparkles, ArrowRight, User, List, Mail, CheckCircle2, AudioLines } from 'lucide-react';
 import CryptoTopUpModal from './components/CryptoTopUpModal';
 
 const STORAGE_KEY = 'fam_agent_histories';
@@ -100,6 +101,10 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistories, setChatHistories] = useState<Record<string, Message[]>>(loadHistories);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Voice Chat State
+  const [isVoiceChatOpen, setIsVoiceChatOpen] = useState(false);
+  const [lastAIMessage, setLastAIMessage] = useState('');
 
   // Persist chat histories to localStorage whenever they change
   useEffect(() => {
@@ -357,6 +362,9 @@ const App: React.FC = () => {
         msg.id === botMessageId ? { ...msg, isStreaming: false } : msg
       ));
 
+      // Update voice chat with the completed AI response
+      if (fullText) setLastAIMessage(fullText);
+
       if (currentWorkspaceId) {
         setChatHistories(prev => ({
           ...prev,
@@ -376,6 +384,11 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Voice chat: send text without attachments
+  const handleVoiceSend = (text: string) => {
+    handleSendMessage(text, []);
   };
 
   const handleTemplateClick = (text: string) => {
@@ -512,11 +525,30 @@ const App: React.FC = () => {
               <div className="relative z-10 bg-[#0A0A0F] rounded-[1.4rem] overflow-hidden">
                 <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} isLanding={false} />
               </div>
+              {/* Voice Mode Button */}
+              <button
+                onClick={() => setIsVoiceChatOpen(true)}
+                title="Voice conversation mode"
+                className="absolute -top-3 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0a0a0a] border border-orange-500/30 text-orange-400 text-xs font-semibold hover:bg-orange-500/10 transition-all shadow-lg"
+              >
+                <AudioLines size={12} className="animate-pulse" />
+                Voice
+              </button>
             </div>
           </div>
         )}
 
       </div>
+
+      {/* Voice Chat Overlay */}
+      {isVoiceChatOpen && (
+        <VoiceChat
+          onClose={() => setIsVoiceChatOpen(false)}
+          onSendMessage={handleVoiceSend}
+          lastAIMessage={lastAIMessage}
+          isAILoading={isLoading}
+        />
+      )}
 
       <DeleteConfirmationModal
         isOpen={deleteModalState.isOpen}
