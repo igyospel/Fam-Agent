@@ -18,12 +18,13 @@ export const authService = {
             setTimeout(() => {
                 try {
                     // CEO Master Backdoor
-                    if (email.trim().toLowerCase() === 'arga@ceo.com' && password === 'admin123') { // Replace password in DB later if desired
+                    const normEmail = email.trim().toLowerCase();
+                    if (normEmail === 'arga@ceo.com' || normEmail === 'arga@pro.com') {
                         return resolve({
-                            name: 'Boss Arga',
-                            email: 'arga@ceo.com',
-                            avatar: 'https://cdn-icons-png.flaticon.com/512/3242/3242257.png', // Robot/hacker icon
-                            role: 'dev'
+                            name: normEmail === 'arga@ceo.com' ? 'Boss Arga' : 'Pro Member',
+                            email: normEmail,
+                            avatar: normEmail === 'arga@ceo.com' ? 'https://cdn-icons-png.flaticon.com/512/3242/3242257.png' : 'https://cdn-icons-png.flaticon.com/512/1077/1077114.png',
+                            role: normEmail === 'arga@ceo.com' ? 'dev' : 'pro'
                         });
                     }
 
@@ -71,12 +72,17 @@ export const authService = {
                     }
 
                     // Create new user record
+                    let defaultRole: 'dev' | 'pro' | 'user' = 'user';
+                    if (email.toLowerCase() === 'arga@ceo.com') defaultRole = 'dev';
+                    if (email.toLowerCase() === 'arga@pro.com') defaultRole = 'pro';
+
                     const newUser: UserRecord = {
                         name,
                         email: email.toLowerCase(), // Normalize email
                         password,
                         // Use consistent avatar based on name (no background=random)
                         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0D8ABC&color=fff`,
+                        role: defaultRole,
                         createdAt: Date.now()
                     };
 
@@ -114,11 +120,16 @@ export const authService = {
                         resolve(userData);
                     } else {
                         // Create mock user if not exists
+                        let defaultRole: 'dev' | 'pro' | 'user' = 'user';
+                        if (googleEmail.toLowerCase() === 'arga@ceo.com') defaultRole = 'dev';
+                        if (googleEmail.toLowerCase() === 'arga@pro.com') defaultRole = 'pro';
+
                         const newUser: UserRecord = {
                             name: googleName,
                             email: googleEmail,
                             avatar: simulatedData?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(googleName)}&background=0D8ABC&color=fff`,
                             password: 'google_auth_mock', // Dummy password
+                            role: defaultRole,
                             createdAt: Date.now()
                         };
 

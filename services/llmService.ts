@@ -2,41 +2,37 @@ import { Message, Attachment } from "../types";
 import { SYSTEM_INSTRUCTION } from "../constants";
 import { streamGeminiResponse } from "./geminiService";
 
-// OpenRouter is now also proxied through our server — no secrets in browser!
-// The client simply uses our /api/v1/generate for Gemini (free tier)
-// or falls back to Pollinations if the proxy is down.
-const PROXY_URL = '/api/v1/generate';
+// VITE_OPENROUTER_API_KEY is optional — only needed for direct client-side OpenRouter calls
+// (not needed when using the server proxy which handles premium routing internally)
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || '';
 
-// For paid-tier users who still want direct OpenRouter routing,
-// they can optionally store their own key via Settings.
-const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY || ''; // Optional — only for premium fallback
-
-// Llama 3.3 70B Instruct: Exceptionally brilliant reasoning, extremely cheap via OpenRouter.
+// Direct OpenRouter models (only used if VITE_OPENROUTER_API_KEY explicitly set)
 const MODEL_DEFAULT = "meta-llama/llama-3.3-70b-instruct";
-// Gemini 2.5 Flash via OpenRouter: vision capable fallback for premium users.
 const MODEL_VISION = "google/gemini-2.5-flash";
-// Perplexity Sonar: real-time web search built-in.
 const MODEL_WEB_SEARCH = "perplexity/sonar";
 
 export async function* streamLLMResponse(
     history: Message[],
     currentMessageText: string,
     attachments: Attachment[],
-    webSearch: boolean = false
+    webSearch: boolean = false,
+    isPremiumUser: boolean = false
 ) {
     const hasImages = attachments.some(att => att.mimeType.startsWith("image/"));
     const hasDocs = attachments.some(att => !att.mimeType.startsWith("image/"));
 
     // Routing Strategy:
-    // 1. DEFAULT (Free): Use our secure Gemini proxy (/api/v1/generate) — keys rotate server-side
-    // 2. OPTIONAL Premium: If user has their own VITE_OPENROUTER_API_KEY in Settings, use OpenRouter
-    // 3. LAST RESORT: Pollinations AI (no key required, less capable)
+    // 1. DEFAULT (Free users): Secure Gemini proxy → Groq (text) / NVIDIA (vision)
+    // 2. PREMIUM (Pro/Dev) with no client key: Same proxy, but sends isPremium=true
+    //    → Proxy picks OpenRouter: Llama 3.3 70B (reasoning) / Gemini 2.5 Flash (vision)
+    // 3. OPTIONAL Direct OpenRouter: If VITE_OPENROUTER_API_KEY is set client-side
     if (!OPENROUTER_API_KEY) {
-        // Route via our secure serverless proxy (free Gemini with key rotation)
-        console.log("[LLM] Route: Secure Gemini Proxy /api/v1/generate (keys server-side, rotating)");
-        return yield* streamGeminiResponse(history, currentMessageText, attachments);
+        // Route via our secure serverless proxy (free or premium handled server-side)
+        console.log(`[LLM] Route: Proxy /api/v1/generate | isPremium: ${isPremiumUser} | webSearch: ${webSearch}`);
+        return yield* streamGeminiResponse(history, currentMessageText, attachments, webSearch, isPremiumUser);
     }
 
+    // --- Direct OpenRouter (only if client has VITE_OPENROUTER_API_KEY explicitly set) ---
     // Select appropriate Model
     let modelId = MODEL_DEFAULT;
 
@@ -47,7 +43,7 @@ export async function* streamLLMResponse(
         modelId = MODEL_WEB_SEARCH;
     }
 
-    console.log(`[LLM] Using model: ${modelId} | webSearch: ${webSearch}`);
+    console.log(`[LLM] Direct OpenRouter model: ${modelId} | webSearch: ${webSearch}`);
 
     try {
         // System prompt + history in OpenAI-compatible format

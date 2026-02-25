@@ -26,6 +26,6 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
-  role?: 'user' | 'dev';
+  role?: 'dev' | 'pro' | 'user';
   credits?: number;
 }

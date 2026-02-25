@@ -171,10 +171,15 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             <div
-              className="flex-1 min-w-0 cursor-pointer"
+              className="flex-1 min-w-0 cursor-pointer flex flex-col justify-center gap-0.5"
               onClick={onOpenProfile}
             >
-              <p className="text-sm font-bold text-white truncate group-hover:text-orange-400 transition-colors">{user.name}</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-bold text-white truncate group-hover:text-orange-400 transition-colors">{user.name}</p>
+                {user.role === 'dev' && <span className="text-[8px] font-black bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded uppercase border border-purple-500/30">Dev</span>}
+                {user.role === 'pro' && <span className="text-[8px] font-black bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded uppercase border border-yellow-500/30">Pro</span>}
+                {(!user.role || user.role === 'user') && <span className="text-[8px] font-black bg-gray-500/20 text-gray-400 px-1.5 py-0.5 rounded uppercase border border-gray-500/30">Free</span>}
+              </div>
               <p className="text-[10px] text-gray-500 truncate uppercase tracking-widest font-medium" title={user.email}>{user.email}</p>
             </div>
 

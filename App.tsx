@@ -8,7 +8,7 @@ import LandingPage from './components/LandingPage';
 import ProfileSettings from './components/ProfileSettings';
 import DeleteConfirmationModal from './components/DeleteConfirmationModal';
 import { Message, Attachment, User as UserType } from './types';
-import { streamLLMResponse as streamGeminiResponse } from './services/llmService';
+import { streamLLMResponse } from './services/llmService';
 import { authService } from './services/authService';
 import { generateId, compressImageForStorage } from './utils';
 import { extractUrls, fetchUrlContent } from './utils/webScraper';
@@ -80,7 +80,7 @@ const App: React.FC = () => {
   // Credits & Payment
   const [showTopUp, setShowTopUp] = useState(false);
   const [credits, setCredits] = useState<number>(() => {
-    try { return parseInt(localStorage.getItem('fam_agent_credits') || '50', 10); } catch { return 50; }
+    try { return parseInt(localStorage.getItem('fam_agent_credits') || '5', 10); } catch { return 5; }
   });
 
   const handleCreditsAdded = (amount: number) => {
@@ -240,6 +240,18 @@ const App: React.FC = () => {
   const handleSendMessage = async (text: string, attachments: Attachment[], webSearch: boolean = false) => {
     if (!text.trim() && attachments.length === 0) return;
 
+    // Credit Check for Freebies
+    const isFreeUser = !user?.role || user?.role === 'user';
+    if (isFreeUser && credits <= 0) {
+      showToast("❌ Daily Free Limit Reached. Silakan upgrade ke Pro.");
+      return;
+    }
+
+    // Decrement credits instantly
+    if (isFreeUser) {
+      handleCreditsAdded(-1);
+    }
+
     let currentWorkspaceId = activeWorkspace;
 
     if (!currentWorkspaceId) {
@@ -312,7 +324,8 @@ const App: React.FC = () => {
         ));
       }
 
-      const stream = streamGeminiResponse(messages, modifiedTextForLLM, attachments, webSearch);
+      const isPremiumUser = user?.role === 'pro' || user?.role === 'dev';
+      const stream = streamLLMResponse(messages, modifiedTextForLLM, attachments, webSearch, isPremiumUser);
       let fullText = '';
 
       for await (const chunk of stream) {

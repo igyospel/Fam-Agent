@@ -1,28 +1,94 @@
 /**
  * /api/v1/generate.ts
- * 
- * Secure Smart Dual-Router (Groq + Gemini/OpenRouter)
- * - Text-only: Routes to Groq (Llama 3.3, super fast, 14.4k limits/day)
- * - Images/Documents: Routes to Gemini, falls back to OpenRouter (Nvidia Nemotron Vision Free)
- * 
- * 100% Free
+ *
+ * Smart Routing Proxy — Tiered by user role:
+ *
+ * FREE users:
+ *   - Text  → Groq (Llama 3.3 70B Versatile, ultra-fast)
+ *   - Vision → NVIDIA (Llama 3.2 11B Vision Instruct, free)
+ *
+ * PREMIUM users (Pro / Dev):
+ *   - Text  → OpenRouter: meta-llama/llama-3.3-70b-instruct (smarter reasoning)
+ *   - Vision → OpenRouter: google/gemini-2.5-flash (superior vision + multimodal)
+ *   - Web search → OpenRouter: perplexity/sonar (real-time web search)
  */
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 const OPENROUTER_KEY = process.env.OPENROUTER_API_KEY || '';
-const GEMINI_KEYS = [
-    process.env.GEMINI_KEY_1,
-    process.env.GEMINI_KEY_2,
-    process.env.GEMINI_KEY_3,
-    process.env.GEMINI_KEY_4,
-    process.env.GEMINI_KEY_5,
-].filter(Boolean) as string[];
+const NVIDIA_KEY = process.env.VITE_GLM_API_KEY || '';
 
-let geminiKeyIndex = 0;
-function getNextGeminiKey(): string {
-    const key = GEMINI_KEYS[geminiKeyIndex % GEMINI_KEYS.length];
-    geminiKeyIndex++;
-    return key;
+// Premium models via OpenRouter
+const PREMIUM_MODEL_TEXT = 'meta-llama/llama-3.3-70b-instruct';
+const PREMIUM_MODEL_VISION = 'google/gemini-2.5-flash-preview-04-17';
+const PREMIUM_MODEL_SEARCH = 'perplexity/sonar';
+
+// Helper: stream OpenRouter response to res
+async function streamOpenRouter(
+    model: string,
+    messages: any[],
+    res: any,
+    temperature = 0.7,
+    maxTokens = 8192
+) {
+    if (!OPENROUTER_KEY) {
+        return res.status(500).json({ error: 'OpenRouter key not configured.' });
+    }
+
+    const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${OPENROUTER_KEY}`,
+            'HTTP-Referer': 'https://agentarga.fun',
+            'X-Title': 'Agent Arga'
+        },
+        body: JSON.stringify({
+            model,
+            messages,
+            stream: true,
+            temperature,
+            max_tokens: maxTokens
+        })
+    });
+
+    if (!orRes.ok) {
+        const errText = await orRes.text();
+        console.error('[Proxy] OpenRouter error:', orRes.status, errText);
+        return res.status(orRes.status).json({ error: 'OpenRouter API Error', detail: errText });
+    }
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Route', `openrouter-${model}`);
+
+    const reader = orRes.body?.getReader();
+    if (!reader) return res.status(500).json({ error: 'No response body from OpenRouter' });
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+    while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed || !trimmed.startsWith('data: ')) continue;
+            const dataStr = trimmed.slice(6);
+            if (dataStr === '[DONE]') { res.write('data: [DONE]\n\n'); continue; }
+            try {
+                const parsed = JSON.parse(dataStr);
+                const text = parsed?.choices?.[0]?.delta?.content;
+                if (text) res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`);
+            } catch { }
+        }
+    }
+    res.write('data: [DONE]\n\n');
+    return res.end();
 }
 
 export default async function handler(req: any, res: any) {
@@ -35,20 +101,84 @@ export default async function handler(req: any, res: any) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-    const { messages, systemInstruction, stream = true } = req.body;
+    const { messages, systemInstruction, stream = true, isPremiumUser = false, webSearch = false } = req.body;
     if (!messages || !Array.isArray(messages)) return res.status(400).json({ error: 'Missing messages array' });
 
+    // hasImages = actual image bytes/URL (needs vision model)
+    // hasDocs   = PDF/doc text already extracted as plain text (needs reasoning model, NOT vision)
     const hasImages = messages.some((m: any) =>
         Array.isArray(m.content) && m.content.some((c: any) => c.type === 'image' || c.type === 'image_url')
     );
+    const hasDocs = messages.some((m: any) =>
+        Array.isArray(m.content) && m.content.some((c: any) => c.type === 'text' && typeof c.text === 'string' && c.text.startsWith('[File:'))
+    );
 
-    // ============================================
-    // ROUTE 1: VISION/DOCUMENTS -> OPENROUTER (Nvidia)
-    // ============================================
+    console.log(`[Proxy] isPremium=${isPremiumUser} | hasImages=${hasImages} | hasDocs=${hasDocs} | webSearch=${webSearch}`);
+
+    // ================================================================
+    // PREMIUM ROUTING — uses OpenRouter with top-tier models
+    // ================================================================
+    if (isPremiumUser && OPENROUTER_KEY) {
+        // Build OpenRouter-compatible messages
+        const orMessages: any[] = [];
+
+        if (systemInstruction) {
+            orMessages.push({ role: 'system', content: systemInstruction });
+        }
+
+        // Normalize messages: convert our proxy image format → OpenRouter image_url format
+        for (const m of messages) {
+            if (Array.isArray(m.content)) {
+                const normalizedContent = m.content.map((part: any) => {
+                    if (part.type === 'image') {
+                        return {
+                            type: 'image_url',
+                            image_url: { url: `data:${part.mimeType || 'image/jpeg'};base64,${part.data}` }
+                        };
+                    }
+                    return part;
+                });
+                orMessages.push({ role: m.role, content: normalizedContent });
+            } else {
+                orMessages.push({ role: m.role, content: m.content });
+            }
+        }
+
+        let premiumModel: string;
+        let temperature = 0.7;
+        let maxTokens = 8192;
+
+        if (hasImages) {
+            // Has actual image → Gemini 2.5 Flash (best vision + multimodal)
+            premiumModel = PREMIUM_MODEL_VISION;
+            maxTokens = 8192;
+            console.log(`[Proxy] PREMIUM Vision → ${premiumModel}`);
+        } else if (webSearch) {
+            // Web search → Perplexity Sonar (real-time)
+            premiumModel = PREMIUM_MODEL_SEARCH;
+            temperature = 0.2;
+            maxTokens = 4096;
+            console.log(`[Proxy] PREMIUM WebSearch → ${premiumModel}`);
+        } else {
+            // Text / PDF docs → Llama 3.3 70B Instruct (best reasoning, long detailed answers)
+            // PDFs are already extracted as text — no vision needed, reasoning wins here
+            premiumModel = PREMIUM_MODEL_TEXT;
+            maxTokens = hasDocs ? 16384 : 8192; // Give more tokens for document analysis
+            console.log(`[Proxy] PREMIUM ${hasDocs ? 'Docs/PDF' : 'Text'} → ${premiumModel} (max_tokens=${maxTokens})`);
+        }
+
+        return streamOpenRouter(premiumModel, orMessages, res, temperature, maxTokens);
+    }
+
+    // ================================================================
+    // FREE ROUTING
+    // ================================================================
+
+    // ---- ROUTE 1: VISION → NVIDIA (Llama 3.2 11B Vision) ----
     if (hasImages) {
-        if (!OPENROUTER_KEY) return res.status(500).json({ error: 'OpenRouter Key missing on server' });
+        if (!NVIDIA_KEY) return res.status(500).json({ error: 'Nvidia API Key missing' });
 
-        const openRouterMessages = messages.map((m: any) => {
+        const nvidiaMessages = messages.map((m: any) => {
             if (Array.isArray(m.content)) {
                 return {
                     ...m,
@@ -67,54 +197,67 @@ export default async function handler(req: any, res: any) {
         });
 
         if (systemInstruction) {
-            openRouterMessages.unshift({ role: 'system', content: systemInstruction });
+            nvidiaMessages.unshift({ role: 'system', content: systemInstruction });
         }
 
         try {
-            const orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            const nvRes = await fetch('https://integrate.api.nvidia.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${OPENROUTER_KEY}`
+                    'Authorization': `Bearer ${NVIDIA_KEY}`
                 },
                 body: JSON.stringify({
-                    model: 'openrouter/free',
-                    messages: openRouterMessages,
+                    model: 'meta/llama-3.2-11b-vision-instruct',
+                    messages: nvidiaMessages,
                     stream: true,
                     temperature: 0.7,
-                    max_tokens: 8192
+                    max_tokens: 4096
                 })
             });
 
-            if (orRes.ok) {
+            if (nvRes.ok) {
                 res.setHeader('Content-Type', 'text/event-stream');
                 res.setHeader('Cache-Control', 'no-cache');
                 res.setHeader('Connection', 'keep-alive');
-                res.setHeader('X-Route', 'openrouter-vision');
+                res.setHeader('X-Route', 'nvidia-vision-free');
 
-                const reader = orRes.body?.getReader();
+                const reader = nvRes.body?.getReader();
                 if (reader) {
                     const decoder = new TextDecoder();
+                    let buffer = '';
                     while (true) {
                         const { done, value } = await reader.read();
                         if (done) break;
-                        res.write(decoder.decode(value, { stream: true }));
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop() || '';
+                        for (const line of lines) {
+                            const trimmed = line.trim();
+                            if (!trimmed || !trimmed.startsWith('data: ')) continue;
+                            const dataStr = trimmed.slice(6);
+                            if (dataStr === '[DONE]') { res.write('data: [DONE]\n\n'); continue; }
+                            try {
+                                const parsed = JSON.parse(dataStr);
+                                const text = parsed?.choices?.[0]?.delta?.content;
+                                if (text) res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: text } }] })}\n\n`);
+                            } catch { }
+                        }
                     }
+                    res.write('data: [DONE]\n\n');
                     return res.end();
                 }
             }
-            console.error('[Proxy] OpenRouter request failed! Status:', orRes.status);
-            return res.status(orRes.status).json({ error: 'Vision API Error' });
+            console.error('[Proxy] NVIDIA Vision failed:', nvRes.status);
+            return res.status(nvRes.status).json({ error: 'Vision API Error' });
         } catch (err) {
-            console.error('[Proxy] OpenRouter exception:', err);
+            console.error('[Proxy] NVIDIA exception:', err);
             return res.status(500).json({ error: 'Server exception on Vision route' });
         }
     }
 
-    // ============================================
-    // ROUTE 2: TEXT ONLY -> GROQ API (Llama 3.3)
-    // ============================================
-    if (!GROQ_API_KEY) return res.status(500).json({ error: 'Groq API Key not configured on Vercel.' });
+    // ---- ROUTE 2: TEXT → GROQ (Llama 3.3 70B Versatile) ----
+    if (!GROQ_API_KEY) return res.status(500).json({ error: 'Groq API Key not configured.' });
 
     const groqMessages = messages.map((m: any) => {
         if (Array.isArray(m.content)) {
@@ -151,7 +294,7 @@ export default async function handler(req: any, res: any) {
         res.setHeader('Content-Type', 'text/event-stream');
         res.setHeader('Cache-Control', 'no-cache');
         res.setHeader('Connection', 'keep-alive');
-        res.setHeader('X-Route', 'groq-text');
+        res.setHeader('X-Route', 'groq-text-free');
 
         const reader = groqRes.body?.getReader();
         if (!reader) throw new Error('No Groq response body');

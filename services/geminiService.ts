@@ -1,7 +1,9 @@
 /**
  * geminiService.ts
  * 
- * All Gemini calls now go through our secure serverless proxy at /api/v1/generate.
+ * All calls go through our secure serverless proxy at /api/v1/generate.
+ * - Free users  → Groq (text) / NVIDIA (vision)
+ * - Premium users → OpenRouter: Llama 3.3 70B (reasoning) / Gemini 2.5 Flash (vision)
  * API Keys are NEVER sent to or stored in the browser.
  */
 import { Message, Attachment } from "../types";
@@ -13,7 +15,9 @@ const PROXY_URL = '/api/v1/generate';
 export async function* streamGeminiResponse(
   history: Message[],
   currentMessageText: string,
-  attachments: Attachment[]
+  attachments: Attachment[],
+  webSearch: boolean = false,
+  isPremiumUser: boolean = false
 ) {
   try {
     // Build OpenAI-compatible messages for the proxy
@@ -58,14 +62,16 @@ export async function* streamGeminiResponse(
       messages.push({ role: 'user', content: currentMessageText });
     }
 
-    // Call our secure proxy
+    // Call our secure proxy — pass isPremiumUser so the proxy can pick the right model
     const response = await fetch(PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         messages,
         systemInstruction: SYSTEM_INSTRUCTION,
-        stream: true
+        stream: true,
+        webSearch,
+        isPremiumUser
       })
     });
 

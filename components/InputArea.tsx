@@ -1,5 +1,5 @@
-import React, { useRef, useState, useEffect } from 'react';
-import { Send, Paperclip, X, Image as ImageIcon, Loader2, Link as LinkIcon, Globe } from 'lucide-react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { Send, Paperclip, X, Image as ImageIcon, Loader2, Link as LinkIcon, Globe, Mic, Square } from 'lucide-react';
 import { Attachment } from '../types';
 import { processFiles } from '../utils';
 
@@ -9,14 +9,37 @@ interface InputAreaProps {
   isLanding?: boolean;
 }
 
+// Web Speech API TypeScript shim
+declare global {
+  interface Window {
+    SpeechRecognition: any;
+    webkitSpeechRecognition: any;
+  }
+}
+
 const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLanding = false }) => {
   const [text, setText] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const [webSearch, setWebSearch] = useState(false);
+
+  // Voice state
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const [interimText, setInterimText] = useState('');
+  const recognitionRef = useRef<any>(null);
+  const finalTextRef = useRef(''); // accumulate final transcript
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Check browser support
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    setSpeechSupported(!!SpeechRecognition);
+  }, []);
+
+  // Auto-resize textarea
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -25,6 +48,85 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
       }
     }
   }, [text, isLanding]);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+    setInterimText('');
+  }, []);
+
+  const startListening = useCallback(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    // Snapshot current text so we can append to it
+    finalTextRef.current = text;
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;       // Keep listening until stopped manually
+    recognition.interimResults = true;   // Show real-time partial results
+    recognition.lang = 'id-ID';          // Indonesian by default; browser auto-detects
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event: any) => {
+      let interim = '';
+      let finalChunk = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalChunk += transcript + ' ';
+        } else {
+          interim += transcript;
+        }
+      }
+
+      if (finalChunk) {
+        finalTextRef.current = (finalTextRef.current + finalChunk).trimStart();
+        setText(finalTextRef.current);
+        setInterimText('');
+      } else {
+        setInterimText(interim);
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.warn('[Speech] Error:', event.error);
+      if (event.error !== 'aborted') {
+        stopListening();
+      }
+    };
+
+    recognition.onend = () => {
+      // Only reset if not manually restarting
+      setIsListening(false);
+      setInterimText('');
+      recognitionRef.current = null;
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  }, [text, stopListening]);
+
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => stopListening();
+  }, [stopListening]);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -39,10 +141,12 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
   };
 
   const handleSend = () => {
+    if (isListening) stopListening();
     if ((text.trim() || attachments.length > 0) && !isLoading) {
       onSendMessage(text, attachments, webSearch);
       setText('');
       setAttachments([]);
+      finalTextRef.current = '';
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
     }
   };
@@ -54,7 +158,6 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
     }
   };
 
-  // Disable web search toggle if images are attached (Perplexity doesn't support vision)
   const hasImages = attachments.some(a => a.mimeType.startsWith('image/'));
 
   const containerClasses = isLanding
@@ -101,17 +204,36 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
           </div>
         )}
 
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={webSearch ? "Search the web with Agent Arga..." : "Initialize command sequence..."}
-          className={`
-            w-full bg-transparent border-0 text-white placeholder-gray-500 focus:ring-0 resize-none custom-scrollbar
-            ${isLanding ? 'text-lg md:text-xl font-light h-full px-2 pt-2' : 'text-[16px] md:text-sm min-h-[44px] max-h-[140px] px-4'}
-          `}
-        />
+        {/* Textarea + interim voice text */}
+        <div className="relative flex-1">
+          <textarea
+            ref={textareaRef}
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              finalTextRef.current = e.target.value;
+            }}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              isListening
+                ? 'Listening... speak now 🎙️'
+                : webSearch
+                  ? 'Search the web with Agent Arga...'
+                  : 'Initialize command sequence...'
+            }
+            className={`
+              w-full bg-transparent border-0 text-white placeholder-gray-500 focus:ring-0 resize-none custom-scrollbar
+              ${isLanding ? 'text-lg md:text-xl font-light h-full px-2 pt-2' : 'text-[16px] md:text-sm min-h-[44px] max-h-[140px] px-4'}
+              ${isListening ? 'placeholder-red-400/60' : ''}
+            `}
+          />
+          {/* Interim voice text preview (ghost text below) */}
+          {isListening && interimText && (
+            <p className="absolute bottom-0 left-4 text-gray-500 text-sm italic pointer-events-none truncate pr-4">
+              {interimText}...
+            </p>
+          )}
+        </div>
 
         <div className={`flex items-center justify-between mt-2 ${!isLanding ? 'px-2 pb-2' : ''}`}>
 
@@ -125,7 +247,6 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
               onChange={handleFileSelect}
             />
 
-            {/* Styled Buttons for Landing */}
             {isLanding ? (
               <>
                 <button
@@ -145,7 +266,6 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
                 </button>
               </>
             ) : (
-              // Chat mode: attachment + web search toggle
               <>
                 <button
                   onClick={() => fileInputRef.current?.click()}
@@ -171,6 +291,26 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
                   <Globe size={15} className={webSearch ? 'animate-pulse' : ''} />
                   <span className="hidden sm:inline">{webSearch ? 'Web ON' : 'Web OFF'}</span>
                 </button>
+
+                {/* Voice Input Button */}
+                {speechSupported && (
+                  <button
+                    onClick={toggleListening}
+                    title={isListening ? 'Stop listening' : 'Voice input — speak your message'}
+                    className={`
+                      relative p-2.5 rounded-xl transition-all duration-300
+                      ${isListening
+                        ? 'bg-red-500/15 text-red-400 border border-red-500/30 shadow-[0_0_20px_rgba(239,68,68,0.2)]'
+                        : 'text-gray-400 hover:bg-white/5 hover:text-white border border-transparent'}
+                    `}
+                  >
+                    {/* Pulse ring when listening */}
+                    {isListening && (
+                      <span className="absolute inset-0 rounded-xl animate-ping bg-red-500/20 pointer-events-none" />
+                    )}
+                    {isListening ? <Square size={16} fill="currentColor" /> : <Mic size={18} />}
+                  </button>
+                )}
               </>
             )}
           </div>
