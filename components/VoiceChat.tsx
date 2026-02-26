@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { X, Mic, Square, Volume2, VolumeX, RotateCcw, Languages } from 'lucide-react';
 
+// Vite injects this at build time via `define` in vite.config.ts
+declare const __GEMINI_KEY__: string;
+
 interface VoiceChatProps {
     onClose: () => void;
     onSendMessage: (text: string) => void;
@@ -174,7 +177,13 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
             return;
         }
 
-        stopSpeaking();
+        // Stop any currently playing audio before re-listening, but don't cancel speechSynthesis
+        // (that can interfere with mic init on some browsers)
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.src = '';
+            audioRef.current = null;
+        }
         finalTextRef.current = '';
         setTranscript('');
         setInterimTranscript('');
@@ -234,24 +243,27 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         };
 
         recognition.onend = () => {
-            recognitionRef.current = null;
-            // Prevent Chrome from turning off the mic automatically if we are still supposed to be listening
-            if (voiceState === 'listening' && finalTextRef.current === '') {
-                try {
-                    startListening(lang);
-                } catch (e) {
-                    // Ignore
-                }
-            } else if (voiceState === 'listening' && finalTextRef.current !== '') {
-                // Let the autotimer handle sending it or the user manually tapping send
+            // Handle abrupt Chrome cutoff by explicitly restarting if we're meant to be listening still
+            if (voiceState === 'listening' && recognitionRef.current === recognition) {
+                // Short delay to avoid call stack max out or browser freeze if it's continuously denying us
+                setTimeout(() => {
+                    try {
+                        startListening(lang);
+                    } catch (e) {
+                        console.error('Failed to auto-restart recognition:', e);
+                    }
+                }, 50);
             }
+            recognitionRef.current = null;
         };
 
         try {
             recognitionRef.current = recognition;
             recognition.start();
         } catch (e) {
-            console.error('[VoiceChat] Could not start speech recognition:', e);
+            console.error('[VoiceChat] Could not start speech recognition directly:', e);
+            setStatusText('Browser mic start blocked');
+            setVoiceState('idle');
         }
     }, [stopSpeaking, sendCurrentTranscript, voiceState]);
 
@@ -264,9 +276,9 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         setVoiceState('speaking');
         setStatusText('Agent Arga is speaking...');
 
-        // Try Gemini TTS directly (bypass backend dev-server issue!)
+        // Try Gemini TTS — key injected by Vite define (works in dev + mobile production)
         try {
-            const geminiKey = import.meta.env.VITE_GEMINI_KEY_1 || import.meta.env.VITE_GLM_API_KEY; // fallback to other keys if needed
+            const geminiKey = (typeof __GEMINI_KEY__ !== 'undefined' && __GEMINI_KEY__) || import.meta.env?.VITE_GEMINI_KEY_1 || '';
             if (geminiKey) {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiKey}`, {
                     method: 'POST',
