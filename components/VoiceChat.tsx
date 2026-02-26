@@ -29,23 +29,15 @@ function stripMarkdown(text: string): string {
         .trim();
 }
 
-// Always prefer female Indonesian voice
+// Get the best available Indonesian voice, fallback to any
 function getBestVoice(): SpeechSynthesisVoice | null {
     const voices = window.speechSynthesis.getVoices();
-    if (!voices.length) return null;
-
-    return (
-        // Explicit female Indonesian (Google)
-        voices.find(v => v.lang.startsWith('id') && v.name.toLowerCase().includes('female')) ||
-        voices.find(v => v.lang.startsWith('id') && v.name.toLowerCase().includes('google')) ||
-        voices.find(v => v.lang.startsWith('id')) ||
-        // Fallback: Google English Female
-        voices.find(v => v.name === 'Google UK English Female') ||
-        voices.find(v => v.name === 'Google US English') ||
-        voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')) ||
-        voices[0] ||
-        null
-    );
+    // Prefer Indonesian
+    const idVoice = voices.find(v => v.lang.startsWith('id'));
+    if (idVoice) return idVoice;
+    // Fallback: English premium voice
+    const enUS = voices.find(v => v.lang === 'en-US' && v.localService);
+    return enUS || voices[0] || null;
 }
 
 const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMessage, isAILoading }) => {
@@ -164,39 +156,12 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         recognition.start();
     }, [stopSpeaking, sendCurrentTranscript, voiceState]);
 
-    // Browser SpeechSynthesis fallback — force female Indonesian
-    const speakWithBrowser = (text: string, onDone?: () => void) => {
-        const utter = new SpeechSynthesisUtterance(text);
-        utter.lang = 'id-ID';
-        utter.rate = 0.92;
-        utter.pitch = 1.6;   // High pitch = clearly female
-        utter.volume = 1.0;
-
-        const applyVoice = () => {
-            const voice = getBestVoice();
-            if (voice) {
-                console.log('[TTS] Using browser voice:', voice.name, voice.lang);
-                utter.voice = voice;
-            }
-        };
-
-        if (window.speechSynthesis.getVoices().length > 0) {
-            applyVoice();
-        } else {
-            window.speechSynthesis.addEventListener('voiceschanged', applyVoice, { once: true });
-        }
-
-        utter.onend = () => { setCurrentSpeakingText(''); onDone?.(); };
-        utter.onerror = () => { setCurrentSpeakingText(''); onDone?.(); };
-        synthRef.current = utter;
-        window.speechSynthesis.speak(utter);
-    };
-
     const speakText = useCallback((text: string, onDone?: () => void) => {
-        if (isMuted || !text.trim()) { onDone?.(); return; }
+        if (isMuted || !text.trim()) {
+            onDone?.();
+            return;
+        }
         window.speechSynthesis.cancel();
-        if ((window as any).responsiveVoice) (window as any).responsiveVoice.cancel();
-
         const clean = stripMarkdown(text);
         if (!clean.trim()) { onDone?.(); return; }
 
@@ -204,22 +169,34 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         setVoiceState('speaking');
         setStatusText('Agent Arga is speaking...');
 
-        // 1. Try ResponsiveVoice (Google TTS under the hood — most natural)
-        const rv = (window as any).responsiveVoice;
-        if (rv && rv.voiceSupport()) {
-            console.log('[TTS] Using ResponsiveVoice: Indonesian Female');
-            rv.speak(clean, 'Indonesian Female', {
-                pitch: 1.1,
-                rate: 0.95,
-                volume: 1,
-                onend: () => { setCurrentSpeakingText(''); onDone?.(); },
-                onerror: () => { speakWithBrowser(clean, onDone); },
-            });
-            return;
+        const utter = new SpeechSynthesisUtterance(clean);
+        utter.rate = 1.05;
+        utter.pitch = 1.0;
+        utter.volume = 1.0;
+
+        // Try to get a good voice
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+            const voice = getBestVoice();
+            if (voice) utter.voice = voice;
+        } else {
+            window.speechSynthesis.addEventListener('voiceschanged', () => {
+                const v = getBestVoice();
+                if (v) utter.voice = v;
+            }, { once: true });
         }
 
-        // 2. Fallback: browser SpeechSynthesis with best available voice
-        speakWithBrowser(clean, onDone);
+        utter.onend = () => {
+            setCurrentSpeakingText('');
+            onDone?.();
+        };
+        utter.onerror = () => {
+            setCurrentSpeakingText('');
+            onDone?.();
+        };
+
+        synthRef.current = utter;
+        window.speechSynthesis.speak(utter);
     }, [isMuted]);
 
     // When AI finishes loading and has a new response → speak it
