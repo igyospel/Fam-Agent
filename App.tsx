@@ -532,17 +532,8 @@ const App: React.FC = () => {
             <div className="w-full max-w-3xl bg-[#0a0a0a]/80 backdrop-blur-2xl rounded-3xl p-[1px] shadow-2xl shadow-black border border-white/10 relative">
               <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-3xl opacity-50 pointer-events-none blur-sm" />
               <div className="relative z-10 bg-[#0A0A0F] rounded-[1.4rem] overflow-hidden">
-                <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} isLanding={false} />
+                <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} isLanding={false} onOpenVoiceChat={() => setIsVoiceChatOpen(true)} />
               </div>
-              {/* Voice Mode Button */}
-              <button
-                onClick={() => setIsVoiceChatOpen(true)}
-                title="Voice conversation mode"
-                className="absolute -top-3 right-4 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0a0a0a] border border-orange-500/30 text-orange-400 text-xs font-semibold hover:bg-orange-500/10 transition-all shadow-lg"
-              >
-                <AudioLines size={12} className="animate-pulse" />
-                Voice
-              </button>
             </div>
           </div>
         )}

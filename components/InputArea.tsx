@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
-import { Send, Paperclip, X, Image as ImageIcon, Loader2, Link as LinkIcon, Globe, Mic, Square } from 'lucide-react';
+import { Send, Paperclip, X, Image as ImageIcon, Loader2, Link as LinkIcon, Globe, Mic, Square, AudioLines } from 'lucide-react';
 import { Attachment } from '../types';
 import { processFiles } from '../utils';
 
@@ -7,6 +7,7 @@ interface InputAreaProps {
   onSendMessage: (text: string, attachments: Attachment[], webSearch: boolean) => void;
   isLoading: boolean;
   isLanding?: boolean;
+  onOpenVoiceChat?: () => void;
 }
 
 // Web Speech API TypeScript shim
@@ -17,7 +18,7 @@ declare global {
   }
 }
 
-const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLanding = false }) => {
+const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLanding = false, onOpenVoiceChat }) => {
   const [text, setText] = useState('');
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isFocused, setIsFocused] = useState(false);
@@ -327,6 +328,18 @@ const InputArea: React.FC<InputAreaProps> = ({ onSendMessage, isLoading, isLandi
                   )}
                   {isListening ? <Square size={16} fill="currentColor" /> : <Mic size={18} />}
                 </button>
+
+                {/* Voice Chat Mode Button */}
+                {onOpenVoiceChat && (
+                  <button
+                    onClick={onOpenVoiceChat}
+                    title="Open full voice conversation mode"
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-orange-500/30 bg-orange-500/5 text-orange-400 text-xs font-semibold hover:bg-orange-500/15 transition-all"
+                  >
+                    <AudioLines size={14} className="animate-pulse" />
+                    <span className="hidden sm:inline">Voice</span>
+                  </button>
+                )}
               </>
             )}
           </div>
