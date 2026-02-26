@@ -211,16 +211,12 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         // 1. Try ResponsiveVoice (Google TTS under the hood — most natural)
         const rv = (window as any).responsiveVoice;
         if (rv && rv.voiceSupport()) {
-            const rvVoice = 'Indonesian Male'; // natural male Indonesian Google voice
-            rv.speak(clean, rvVoice, {
-                pitch: 1,
-                rate: 1,
+            rv.speak(clean, 'Indonesian Female', {
+                pitch: 0.4,   // lower pitch = sounds more masculine while keeping natural Indo accent
+                rate: 0.95,
                 volume: 1,
                 onend: () => { setCurrentSpeakingText(''); onDone?.(); },
-                onerror: () => {
-                    // Fall through to browser TTS
-                    speakWithBrowser(clean, onDone);
-                },
+                onerror: () => { speakWithBrowser(clean, onDone); },
             });
             return;
         }
