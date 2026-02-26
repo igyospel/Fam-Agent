@@ -212,7 +212,7 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         const rv = (window as any).responsiveVoice;
         if (rv && rv.voiceSupport()) {
             rv.speak(clean, 'Indonesian Female', {
-                pitch: 0.4,   // lower pitch = sounds more masculine while keeping natural Indo accent
+                pitch: 1,
                 rate: 0.95,
                 volume: 1,
                 onend: () => { setCurrentSpeakingText(''); onDone?.(); },
