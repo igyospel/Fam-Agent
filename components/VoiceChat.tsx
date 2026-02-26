@@ -130,9 +130,11 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
     const silenceTimerRef = useRef<NodeJS.Timeout | null>(null);
     const finalTextRef = useRef('');
     const spokenMessageRef = useRef('');
-    const audioRef = useRef<HTMLAudioElement | null>(null); // for ElevenLabs audio
+    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const isListeningRef = useRef(false); // tracks desired listening state — avoids stale closure
 
     const stopListening = useCallback(() => {
+        isListeningRef.current = false; // signal that we WANT to be stopped
         if (recognitionRef.current) {
             recognitionRef.current.abort();
             recognitionRef.current = null;
@@ -187,6 +189,8 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         finalTextRef.current = '';
         setTranscript('');
         setInterimTranscript('');
+
+        isListeningRef.current = true; // signal that we WANT to be listening
 
         const recognition = new SpeechRecognition();
         recognition.continuous = true;
@@ -243,9 +247,9 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         };
 
         recognition.onend = () => {
-            // Handle abrupt Chrome cutoff by explicitly restarting if we're meant to be listening still
-            if (voiceState === 'listening' && recognitionRef.current === recognition) {
-                // Short delay to avoid call stack max out or browser freeze if it's continuously denying us
+            // Use isListeningRef (NOT stale voiceState) to check if we still want to be listening
+            // This fixes the React stale closure bug — voiceState captured at creation time was 'idle'
+            if (isListeningRef.current) {
                 setTimeout(() => {
                     try {
                         startListening(lang);
@@ -265,7 +269,7 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
             setStatusText('Browser mic start blocked');
             setVoiceState('idle');
         }
-    }, [stopSpeaking, sendCurrentTranscript, voiceState]);
+    }, [sendCurrentTranscript]);
 
     const speakText = useCallback(async (text: string, onDone?: () => void) => {
         if (isMuted || !text.trim()) { onDone?.(); return; }
