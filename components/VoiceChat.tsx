@@ -29,31 +29,19 @@ function stripMarkdown(text: string): string {
         .trim();
 }
 
-// Pick the most natural-sounding browser voice available
-function getBestVoice(langCode = 'en'): SpeechSynthesisVoice | null {
+// Pick the most natural-sounding voice — always prefer Indonesian
+function getBestVoice(): SpeechSynthesisVoice | null {
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return null;
 
-    // Priority list: Google neural male > any male > fallback
-    const priorities = langCode === 'id'
-        ? [
-            voices.find(v => v.name.toLowerCase().includes('google') && v.lang.startsWith('id') && v.name.toLowerCase().includes('male')),
-            voices.find(v => v.lang.startsWith('id')),
-            voices.find(v => v.name === 'Google UK English Male'),
-            voices.find(v => v.name === 'Google US English Male'),
-            voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')),
-            voices[0],
-        ]
-        : [
-            voices.find(v => v.name === 'Google UK English Male'),
-            voices.find(v => v.name === 'Google US English Male'),
-            voices.find(v => v.name === 'Daniel'), // Apple male voice
-            voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')),
-            voices.find(v => v.localService && v.lang.startsWith('en')),
-            voices[0],
-        ];
-
-    return priorities.find(Boolean) || null;
+    return (
+        voices.find(v => v.name.toLowerCase().includes('google') && v.lang.startsWith('id')) ||
+        voices.find(v => v.lang.startsWith('id')) ||
+        voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')) ||
+        voices.find(v => v.lang.startsWith('en')) ||
+        voices[0] ||
+        null
+    );
 }
 
 const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMessage, isAILoading }) => {
@@ -172,15 +160,16 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         recognition.start();
     }, [stopSpeaking, sendCurrentTranscript, voiceState]);
 
-    // Browser SpeechSynthesis fallback with best available voice
+    // Browser SpeechSynthesis fallback — try Indonesian first
     const speakWithBrowser = (text: string, onDone?: () => void) => {
         const utter = new SpeechSynthesisUtterance(text);
+        utter.lang = 'id-ID';
         utter.rate = 0.95;
         utter.pitch = 1.0;
         utter.volume = 1.0;
 
         const applyVoice = () => {
-            const voice = getBestVoice('en');
+            const voice = getBestVoice();
             if (voice) utter.voice = voice;
         };
 
