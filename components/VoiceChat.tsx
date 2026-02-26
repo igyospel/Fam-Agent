@@ -246,159 +246,177 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         onClose();
     };
 
-    // Orb animation classes based on state
-    const orbConfig = {
-        idle: {
-            outer: 'bg-white/5 border border-white/10',
-            inner: 'bg-white/10',
-            core: 'bg-gray-600',
-            ring1: '',
-            ring2: '',
-        },
-        listening: {
-            outer: 'bg-green-500/10 border border-green-500/20',
-            inner: 'bg-green-500/15',
-            core: 'bg-green-400',
-            ring1: 'animate-ping bg-green-500/20',
-            ring2: 'animate-pulse bg-green-500/10',
-        },
-        thinking: {
-            outer: 'bg-orange-500/10 border border-orange-500/20',
-            inner: 'bg-orange-500/15 animate-spin',
-            core: 'bg-orange-400 animate-pulse',
-            ring1: 'animate-pulse bg-orange-500/15',
-            ring2: '',
-        },
-        speaking: {
-            outer: 'bg-blue-500/10 border border-blue-500/20',
-            inner: 'bg-blue-500/15',
-            core: 'bg-blue-400',
-            ring1: 'animate-ping bg-blue-500/20',
-            ring2: 'animate-pulse bg-blue-500/10',
-        },
+    // Color config per state
+    const stateColor = {
+        idle: { glow: '', bar: 'bg-white/20', label: 'text-white/30' },
+        listening: { glow: 'shadow-[0_0_80px_rgba(34,197,94,0.25)]', bar: 'bg-green-400', label: 'text-green-400' },
+        thinking: { glow: 'shadow-[0_0_80px_rgba(251,146,60,0.25)]', bar: 'bg-orange-400', label: 'text-orange-400' },
+        speaking: { glow: 'shadow-[0_0_80px_rgba(96,165,250,0.25)]', bar: 'bg-blue-400', label: 'text-blue-400' },
     };
+    const sc = stateColor[voiceState];
 
-    const orb = orbConfig[voiceState];
+    const orbBorder = {
+        idle: 'border-white/10',
+        listening: 'border-green-500/40',
+        thinking: 'border-orange-500/40',
+        speaking: 'border-blue-500/40',
+    }[voiceState];
 
-    const stateEmoji = {
-        idle: '💤',
-        listening: '🎙️',
-        thinking: '⚙️',
-        speaking: '🔊',
-    };
+    const stateLabel = {
+        idle: 'Tap to speak',
+        listening: 'Listening',
+        thinking: 'Thinking…',
+        speaking: 'Speaking',
+    }[voiceState];
+
+    // 7 animated sound-bar columns
+    const BAR_HEIGHTS = [0.45, 0.75, 1, 0.65, 1, 0.8, 0.5];
 
     return (
-        <div className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-between py-16 px-8">
+        <>
+            <style>{`
+                @keyframes vcBar {
+                    0%, 100% { transform: scaleY(0.2); }
+                    50%       { transform: scaleY(1); }
+                }
+            `}</style>
+            <div className="fixed inset-0 z-[9999] bg-[#060606]/97 backdrop-blur-2xl flex flex-col items-center justify-between py-10 px-6">
 
-            {/* Top bar */}
-            <div className="w-full flex items-center justify-between max-w-md">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                    <span className="text-sm font-semibold text-white/60 tracking-wide uppercase">Voice Mode</span>
-                </div>
-                <div className="flex items-center gap-3">
-                    <button
-                        onClick={() => {
-                            setIsMuted(!isMuted);
-                            if (!isMuted) stopSpeaking();
-                        }}
-                        className={`p-2 rounded-xl border transition-all ${isMuted ? 'border-red-500/30 bg-red-500/10 text-red-400' : 'border-white/10 bg-white/5 text-gray-400 hover:text-white'}`}
-                        title={isMuted ? 'Unmute AI voice' : 'Mute AI voice'}
-                    >
-                        {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-                    </button>
-                    <button
-                        onClick={handleClose}
-                        className="p-2 rounded-xl border border-white/10 bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
-                    >
-                        <X size={18} />
-                    </button>
-                </div>
-            </div>
-
-            {/* Center — Orb */}
-            <div className="flex flex-col items-center gap-8">
-                {/* Transcript */}
-                <div className="min-h-[60px] max-w-sm text-center">
-                    {transcript && (
-                        <p className="text-white/90 text-lg font-medium leading-relaxed">
-                            "{transcript}"
-                        </p>
-                    )}
-                    {interimTranscript && !transcript && (
-                        <p className="text-gray-500 text-base italic">
-                            {interimTranscript}...
-                        </p>
-                    )}
-                    {currentSpeakingText && voiceState === 'speaking' && (
-                        <p className="text-blue-300/80 text-sm leading-relaxed">
-                            {currentSpeakingText}
-                        </p>
-                    )}
-                </div>
-
-                {/* Animated Orb */}
-                <div className="relative flex items-center justify-center cursor-pointer" onClick={handleOrbClick}>
-                    {/* Outer ring 2 */}
-                    {orb.ring2 && (
-                        <span className={`absolute w-52 h-52 rounded-full ${orb.ring2}`} style={{ animationDuration: '2s' }} />
-                    )}
-                    {/* Outer ring 1 */}
-                    {orb.ring1 && (
-                        <span className={`absolute w-44 h-44 rounded-full ${orb.ring1}`} style={{ animationDelay: '0.3s' }} />
-                    )}
-                    {/* Outer shell */}
-                    <div className={`w-36 h-36 rounded-full flex items-center justify-center transition-all duration-500 ${orb.outer}`}>
-                        {/* Inner */}
-                        <div className={`w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300 ${orb.inner}`}>
-                            {/* Core */}
-                            <div className={`w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 ${orb.core}`}>
-                                <span className="text-2xl select-none">{stateEmoji[voiceState]}</span>
-                            </div>
-                        </div>
+                {/* ── Top bar ── */}
+                <div className="w-full max-w-sm flex items-center justify-between">
+                    <span className="text-[11px] font-semibold tracking-[0.18em] uppercase text-white/25">
+                        Voice Mode
+                    </span>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => { setIsMuted(v => !v); if (!isMuted) stopSpeaking(); }}
+                            className={`p-2 rounded-xl border text-[13px] transition-all ${isMuted
+                                ? 'border-red-500/30 bg-red-500/10 text-red-400'
+                                : 'border-white/10 bg-white/[0.04] text-white/30 hover:text-white'}`}
+                        >
+                            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+                        </button>
+                        <button
+                            onClick={handleClose}
+                            className="p-2 rounded-xl border border-white/10 bg-white/[0.04] text-white/30 hover:text-white hover:bg-white/10 transition-all"
+                        >
+                            <X size={16} />
+                        </button>
                     </div>
                 </div>
 
-                {/* Status */}
-                <div className="text-center">
-                    <p className="text-white/70 text-base font-medium">{statusText}</p>
-                    {voiceState === 'listening' && (
-                        <p className="text-gray-600 text-xs mt-1">Tap orb to send • auto-sends after pause</p>
-                    )}
-                    {voiceState === 'speaking' && (
-                        <p className="text-gray-600 text-xs mt-1">Tap orb to interrupt</p>
-                    )}
-                </div>
-            </div>
+                {/* ── Center ── */}
+                <div className="flex flex-col items-center gap-10 w-full max-w-sm">
 
-            {/* Bottom — action buttons */}
-            <div className="flex items-center gap-4">
-                {voiceState === 'listening' && finalTextRef.current.trim() && (
-                    <button
-                        onClick={sendCurrentTranscript}
-                        className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-green-500/20 border border-green-500/30 text-green-400 font-semibold text-sm hover:bg-green-500/30 transition-all"
+                    {/* Transcript area */}
+                    <div className="min-h-[56px] w-full text-center px-2">
+                        {transcript && voiceState !== 'listening' && (
+                            <p className="text-white/75 text-[15px] font-medium leading-relaxed">
+                                "{transcript}"
+                            </p>
+                        )}
+                        {(interimTranscript || (voiceState === 'listening' && finalTextRef.current)) && (
+                            <div className="space-y-0.5">
+                                {finalTextRef.current && (
+                                    <p className="text-white/70 text-[15px] font-medium">"{finalTextRef.current}"</p>
+                                )}
+                                {interimTranscript && (
+                                    <p className="text-white/30 text-[14px] italic">{interimTranscript}…</p>
+                                )}
+                            </div>
+                        )}
+                        {currentSpeakingText && voiceState === 'speaking' && (
+                            <p className="text-blue-300/60 text-[13px] leading-relaxed">{currentSpeakingText}</p>
+                        )}
+                    </div>
+
+                    {/* Orb */}
+                    <div
+                        onClick={handleOrbClick}
+                        className={`relative w-44 h-44 rounded-full border-2 flex items-center justify-center cursor-pointer transition-all duration-700 select-none ${orbBorder} ${sc.glow}`}
+                        style={{ background: 'rgba(255,255,255,0.03)' }}
                     >
-                        <Mic size={16} />
-                        Send now
+                        {/* Ping ring */}
+                        {(voiceState === 'listening' || voiceState === 'speaking') && (
+                            <span
+                                className={`absolute inset-[-14px] rounded-full border opacity-30 animate-ping ${voiceState === 'listening' ? 'border-green-400' : 'border-blue-400'}`}
+                                style={{ animationDuration: '1.6s' }}
+                            />
+                        )}
+
+                        {/* Sound bars (animated when active) */}
+                        <div className="flex items-end gap-[4px] h-9">
+                            {BAR_HEIGHTS.map((h, i) => {
+                                const active = voiceState === 'listening' || voiceState === 'speaking';
+                                return (
+                                    <div
+                                        key={i}
+                                        className={`w-[4px] rounded-full ${sc.bar} transition-all duration-300`}
+                                        style={{
+                                            height: active ? `${h * 36}px` : '4px',
+                                            animation: active ? `vcBar ${0.7 + i * 0.08}s ease-in-out infinite` : 'none',
+                                            animationDelay: `${i * 0.09}s`,
+                                            opacity: active ? 1 : 0.2,
+                                        }}
+                                    />
+                                );
+                            })}
+                        </div>
+
+                        {/* Spinning arc when thinking */}
+                        {voiceState === 'thinking' && (
+                            <svg className="absolute inset-0 w-full h-full animate-spin" style={{ animationDuration: '1.2s' }} viewBox="0 0 176 176">
+                                <circle
+                                    cx="88" cy="88" r="82"
+                                    fill="none"
+                                    stroke="rgba(251,146,60,0.5)"
+                                    strokeWidth="2"
+                                    strokeDasharray="100 420"
+                                    strokeLinecap="round"
+                                />
+                            </svg>
+                        )}
+                    </div>
+
+                    {/* State label + hint */}
+                    <div className="text-center space-y-1">
+                        <p className={`text-[15px] font-semibold tracking-wide ${sc.label}`}>{stateLabel}</p>
+                        <p className="text-[12px] text-white/20">
+                            {voiceState === 'idle' && 'Tap the orb to start'}
+                            {voiceState === 'listening' && 'Pause 1.8s to auto-send · tap to send now'}
+                            {voiceState === 'speaking' && 'Tap to interrupt'}
+                            {voiceState === 'thinking' && 'Processing your message…'}
+                        </p>
+                    </div>
+                </div>
+
+                {/* ── Bottom ── */}
+                <div className="flex items-center gap-3">
+                    {voiceState === 'listening' && finalTextRef.current.trim() && (
+                        <button
+                            onClick={sendCurrentTranscript}
+                            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-green-500/15 border border-green-500/30 text-green-400 text-[13px] font-semibold hover:bg-green-500/25 transition-all"
+                        >
+                            <Mic size={14} />
+                            Send
+                        </button>
+                    )}
+                    <button
+                        onClick={() => {
+                            stopListening(); stopSpeaking();
+                            finalTextRef.current = '';
+                            setTranscript(''); setInterimTranscript('');
+                            setVoiceState('idle'); setStatusText('Tap to start speaking');
+                        }}
+                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 text-white/30 text-[13px] font-medium hover:text-white hover:bg-white/10 transition-all"
+                    >
+                        <RotateCcw size={13} />
+                        Reset
                     </button>
-                )}
-                <button
-                    onClick={() => {
-                        stopListening();
-                        stopSpeaking();
-                        finalTextRef.current = '';
-                        setTranscript('');
-                        setInterimTranscript('');
-                        setVoiceState('idle');
-                        setStatusText('Tap to start speaking');
-                    }}
-                    className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-white/5 border border-white/10 text-gray-400 font-semibold text-sm hover:bg-white/10 hover:text-white transition-all"
-                >
-                    <RotateCcw size={16} />
-                    Reset
-                </button>
+                </div>
+
             </div>
-        </div>
+        </>
     );
 };
 
