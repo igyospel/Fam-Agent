@@ -113,6 +113,7 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
     const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
     const maxTimerRef = useRef<NodeJS.Timeout | null>(null);
     const secondsRef = useRef(0);
+    const isBusyRef = useRef(false); // Prevents fast double clicks breaking the state machine
 
     useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
     useEffect(() => { currentLangRef.current = currentLang; }, [currentLang]);
@@ -143,7 +144,7 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
 
         try {
             const groqKey = (typeof __GROQ_KEY__ !== 'undefined' && __GROQ_KEY__) || '';
-            if (!groqKey) throw new Error('No Groq key configured');
+            if (!groqKey) throw new Error('No Groq API key found. Check Vite config.');
 
             const ext = blob.type.includes('ogg') ? 'ogg' : blob.type.includes('mp4') ? 'mp4' : 'webm';
             const formData = new FormData();
@@ -161,7 +162,7 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
 
             if (!res.ok) {
                 const err = await res.text();
-                throw new Error(`Groq Whisper ${res.status}: ${err}`);
+                throw new Error(`Whisper API ${res.status}: ${err}`);
             }
 
             const data = await res.json();
@@ -174,22 +175,28 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
                 onSendMessage(text);
             } else {
                 setVoiceState('idle');
-                setStatusText('No speech detected. Tap to try again.');
+                setStatusText('No speech detected. Tap to retry.');
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error('[STT] Transcription failed:', err);
             setVoiceState('idle');
-            setStatusText('Transcription failed. Tap to retry.');
+            setStatusText(`Error: ${err.message.substring(0, 30)}`);
+        } finally {
+            isBusyRef.current = false;
         }
     }, [onSendMessage]);
 
     // ── Stop recording ────────────────────────────────────────────────────────
     const stopRecording = useCallback(() => {
+        if (isBusyRef.current) return;
+        isBusyRef.current = true; // Lock until transcribe
+
         stopStream();
         const recorder = mediaRecorderRef.current;
         if (recorder && recorder.state === 'recording') {
             recorder.stop(); // triggers onstop → transcribeAndSend
         } else {
+            isBusyRef.current = false;
             setVoiceState('idle');
             setStatusText('Tap the mic to start');
         }
@@ -198,6 +205,9 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
 
     // ── Start recording ───────────────────────────────────────────────────────
     const startRecording = useCallback(async () => {
+        if (isBusyRef.current) return;
+        isBusyRef.current = true;
+
         // Stop any playing audio
         if (audioRef.current) {
             audioRef.current.pause();
@@ -236,13 +246,15 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
                 await transcribeAndSend(blob);
             };
 
-            recorder.onerror = () => {
+            recorder.onerror = (evt: any) => {
                 stopStream();
                 setVoiceState('idle');
-                setStatusText('Recording error. Tap to retry.');
+                setStatusText(`Mic error: ${evt.error?.name || 'Unknown'}`);
+                isBusyRef.current = false;
             };
 
-            recorder.start(250); // collect chunks every 250ms
+            // Call start without timeslice! Timeslice causes erratic behavior on Safari MediaRecorder
+            recorder.start();
             mediaRecorderRef.current = recorder;
 
             setVoiceState('recording');
@@ -259,13 +271,18 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
             // Max 60 seconds
             maxTimerRef.current = setTimeout(() => stopRecording(), 60000);
 
+            isBusyRef.current = false; // Successfully started
         } catch (err: any) {
             console.error('[Mic] getUserMedia failed:', err);
+            isBusyRef.current = false;
             setVoiceState('idle');
+
             if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
-                setStatusText('Mic permission denied — allow mic in browser settings');
+                setStatusText('Permission denied. Please allow mic.');
+            } else if (!navigator.mediaDevices) {
+                setStatusText('Browser blocks mic on non-HTTPS URL');
             } else {
-                setStatusText(`Mic error: ${err.name}`);
+                setStatusText(`Error: ${err.message?.substring(0, 30) || err.name}`);
             }
         }
     }, [stopStream, stopRecording, transcribeAndSend]);
@@ -366,7 +383,18 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
     }, []);
 
     // ── UI handlers ───────────────────────────────────────────────────────────
+    const unlockMobileAudio = () => {
+        // iOS requires audio context to be unlocked synchronously inside a click handler
+        try {
+            const silentAudio = new Audio();
+            silentAudio.src = 'data:audio/mp3;base64,//NExAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq';
+            silentAudio.play().catch(() => { }); // Intentionally ignore promise rejection
+        } catch (e) { /* ignore */ }
+    };
+
     const handleOrbClick = () => {
+        unlockMobileAudio();
+
         if (voiceState === 'recording') {
             stopRecording();
         } else if (voiceState === 'speaking') {
