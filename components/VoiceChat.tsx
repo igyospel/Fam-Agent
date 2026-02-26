@@ -29,16 +29,20 @@ function stripMarkdown(text: string): string {
         .trim();
 }
 
-// Pick the most natural-sounding voice — always prefer Indonesian
+// Always prefer female Indonesian voice
 function getBestVoice(): SpeechSynthesisVoice | null {
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return null;
 
     return (
-        voices.find(v => v.name.toLowerCase().includes('google') && v.lang.startsWith('id')) ||
+        // Explicit female Indonesian (Google)
+        voices.find(v => v.lang.startsWith('id') && v.name.toLowerCase().includes('female')) ||
+        voices.find(v => v.lang.startsWith('id') && v.name.toLowerCase().includes('google')) ||
         voices.find(v => v.lang.startsWith('id')) ||
+        // Fallback: Google English Female
+        voices.find(v => v.name === 'Google UK English Female') ||
+        voices.find(v => v.name === 'Google US English') ||
         voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')) ||
-        voices.find(v => v.lang.startsWith('en')) ||
         voices[0] ||
         null
     );
@@ -160,17 +164,20 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         recognition.start();
     }, [stopSpeaking, sendCurrentTranscript, voiceState]);
 
-    // Browser SpeechSynthesis fallback — try Indonesian first
+    // Browser SpeechSynthesis fallback — force female Indonesian
     const speakWithBrowser = (text: string, onDone?: () => void) => {
         const utter = new SpeechSynthesisUtterance(text);
         utter.lang = 'id-ID';
-        utter.rate = 0.95;
-        utter.pitch = 1.0;
+        utter.rate = 0.92;
+        utter.pitch = 1.6;   // High pitch = clearly female
         utter.volume = 1.0;
 
         const applyVoice = () => {
             const voice = getBestVoice();
-            if (voice) utter.voice = voice;
+            if (voice) {
+                console.log('[TTS] Using browser voice:', voice.name, voice.lang);
+                utter.voice = voice;
+            }
         };
 
         if (window.speechSynthesis.getVoices().length > 0) {
@@ -200,8 +207,9 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         // 1. Try ResponsiveVoice (Google TTS under the hood — most natural)
         const rv = (window as any).responsiveVoice;
         if (rv && rv.voiceSupport()) {
+            console.log('[TTS] Using ResponsiveVoice: Indonesian Female');
             rv.speak(clean, 'Indonesian Female', {
-                pitch: 1,
+                pitch: 1.1,
                 rate: 0.95,
                 volume: 1,
                 onend: () => { setCurrentSpeakingText(''); onDone?.(); },
