@@ -217,14 +217,8 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         if ((window as any).responsiveVoice) (window as any).responsiveVoice.cancel();
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    channelCount: 1,
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    sampleRate: 16000,
-                }
-            });
+            // Use ultra-simple audio constraint to prevent NotSupportedError on certain laptops/external mics
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
             streamRef.current = stream;
 
             // Pick best supported MIME type
@@ -441,31 +435,16 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
 
             <div className="fixed inset-0 z-[9999] bg-[#050505]/98 backdrop-blur-2xl flex flex-col items-center justify-between py-12 px-6">
 
-                {/* Top bar */}
-                <div className="w-full max-w-sm flex items-center justify-between">
+                {/* Top bar (Simplified) */}
+                <div className="w-full justify-between max-w-sm flex items-center">
                     <span className="text-xs font-semibold text-white/30 tracking-[0.2em] uppercase">Voice Mode</span>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={cycleLang}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-xs font-mono text-white/50 hover:text-white hover:border-white/20 transition-all"
-                        >
-                            <Languages size={12} />
-                            {currentLang.label}
-                        </button>
-                        <button
-                            onClick={() => { setIsMuted(v => !v); if (!isMuted) stopSpeaking(); }}
-                            className={`p-2 rounded-lg border transition-all ${isMuted ? 'border-red-500/30 bg-red-500/10 text-red-400' : 'border-white/10 bg-white/5 text-white/40 hover:text-white'}`}
-                            title={isMuted ? 'Unmute AI' : 'Mute AI'}
-                        >
-                            {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                        </button>
-                        <button
-                            onClick={() => { stopRecording(); stopSpeaking(); onClose(); }}
-                            className="p-2 rounded-lg border border-white/10 bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all"
-                        >
-                            <X size={16} />
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => { stopRecording(); stopSpeaking(); onClose(); }}
+                        className="p-2 rounded-lg border border-white/10 bg-white/5 text-white/40 hover:text-white hover:bg-white/10 transition-all font-mono"
+                        title="Close Voice Mode"
+                    >
+                        <X size={16} />
+                    </button>
                 </div>
 
                 {/* Center */}
@@ -523,17 +502,6 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
                             </div>
                         )}
                     </div>
-                </div>
-
-                {/* Bottom */}
-                <div className="flex items-center gap-3 w-full max-w-sm justify-center">
-                    <button
-                        onClick={handleReset}
-                        className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/40 text-sm font-medium hover:text-white hover:border-white/20 transition-all"
-                    >
-                        <RotateCcw size={14} />
-                        Reset
-                    </button>
                 </div>
 
             </div>
