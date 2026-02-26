@@ -469,9 +469,18 @@ const App: React.FC = () => {
                 </p>
               </div>
 
-              <div className="w-full max-w-2xl mb-12 relative z-10">
+              <div className="w-full max-w-2xl mb-6 relative z-10">
                 <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} isLanding={true} />
               </div>
+
+              {/* Voice shortcut on landing */}
+              <button
+                onClick={() => setIsVoiceChatOpen(true)}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-orange-500/20 text-orange-400/80 text-sm font-medium hover:bg-orange-500/10 hover:border-orange-500/40 hover:text-orange-300 transition-all mb-10 relative z-10"
+              >
+                <AudioLines size={15} className="animate-pulse" />
+                Or start with voice
+              </button>
 
               <div className="w-full max-w-5xl hidden md:block relative z-10">
                 <div className="flex items-center gap-2 mb-6 ml-2">
