@@ -28,6 +28,44 @@ function stripMarkdown(text: string): string {
         .trim();
 }
 
+function createWavBlob(base64Data: string, sampleRate: number = 24000): string {
+    const raw = atob(base64Data);
+    const rawLength = raw.length;
+    const array = new Uint8Array(new ArrayBuffer(rawLength));
+    for (let i = 0; i < rawLength; i++) {
+        array[i] = raw.charCodeAt(i);
+    }
+
+    const buffer = new ArrayBuffer(44 + rawLength);
+    const view = new DataView(buffer);
+
+    // RIFF chunk descriptor
+    view.setUint32(0, 1380533830, false); // 'RIFF'
+    view.setUint32(4, 36 + rawLength, true); // length
+    view.setUint32(8, 1463899717, false); // 'WAVE'
+
+    // fmt sub-chunk
+    view.setUint32(12, 1718449184, false); // 'fmt '
+    view.setUint32(16, 16, true); // subchunk1size (16 for PCM)
+    view.setUint16(20, 1, true); // audio format (1 = PCM)
+    view.setUint16(22, 1, true); // num channels (1)
+    view.setUint32(24, sampleRate, true); // sample rate
+    view.setUint32(28, sampleRate * 2, true); // byte rate
+    view.setUint16(32, 2, true); // block align
+    view.setUint16(34, 16, true); // bits per sample
+
+    // data sub-chunk
+    view.setUint32(36, 1684108385, false); // 'data'
+    view.setUint32(40, rawLength, true); // data length
+
+    // Write PCM data
+    const pcmData = new Uint8Array(buffer, 44);
+    pcmData.set(array);
+
+    const blob = new Blob([buffer], { type: 'audio/wav' });
+    return URL.createObjectURL(blob);
+}
+
 function getBestVoice(lang: string): SpeechSynthesisVoice | null {
     const voices = window.speechSynthesis.getVoices();
     const preferred = voices.find(v => v.lang.startsWith(lang === 'id' ? 'id' : 'en'));
@@ -109,8 +147,12 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
             audioRef.current.src = '';
             audioRef.current = null;
         }
-        // Stop browser TTS fallback
-        window.speechSynthesis.cancel();
+        // Stop browser TTS fallback and ResponsiveVoice
+        if ((window as any).responsiveVoice) {
+            (window as any).responsiveVoice.cancel();
+        } else {
+            window.speechSynthesis.cancel();
+        }
     }, []);
 
     const sendCurrentTranscript = useCallback(() => {
@@ -127,7 +169,10 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
 
     const startListening = useCallback((lang: typeof LANG_OPTIONS[0]) => {
         const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
-        if (!SpeechRecognition) return;
+        if (!SpeechRecognition) {
+            setStatusText('Browser does not support voice input');
+            return;
+        }
 
         stopSpeaking();
         finalTextRef.current = '';
@@ -179,21 +224,36 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         };
 
         recognition.onerror = (event: any) => {
+            console.error('[VoiceChat] Speech recognition error:', event.error);
             if (event.error === 'no-speech') {
                 setStatusText('No speech detected...');
             } else if (event.error !== 'aborted') {
                 setVoiceState('idle');
-                setStatusText('Error. Tap mic to retry.');
+                setStatusText(`Mic error: ${event.error}`);
             }
         };
 
         recognition.onend = () => {
             recognitionRef.current = null;
+            // Prevent Chrome from turning off the mic automatically if we are still supposed to be listening
+            if (voiceState === 'listening' && finalTextRef.current === '') {
+                try {
+                    startListening(lang);
+                } catch (e) {
+                    // Ignore
+                }
+            } else if (voiceState === 'listening' && finalTextRef.current !== '') {
+                // Let the autotimer handle sending it or the user manually tapping send
+            }
         };
 
-        recognitionRef.current = recognition;
-        recognition.start();
-    }, [stopSpeaking, sendCurrentTranscript]);
+        try {
+            recognitionRef.current = recognition;
+            recognition.start();
+        } catch (e) {
+            console.error('[VoiceChat] Could not start speech recognition:', e);
+        }
+    }, [stopSpeaking, sendCurrentTranscript, voiceState]);
 
     const speakText = useCallback(async (text: string, onDone?: () => void) => {
         if (isMuted || !text.trim()) { onDone?.(); return; }
@@ -204,71 +264,72 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         setVoiceState('speaking');
         setStatusText('Agent Arga is speaking...');
 
-        // Try ElevenLabs TTS via proxy first
+        // Try Gemini TTS directly (bypass backend dev-server issue!)
         try {
-            const res = await fetch('/api/v1/tts', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: clean })
-            });
+            const geminiKey = import.meta.env.VITE_GEMINI_KEY_1 || import.meta.env.VITE_GLM_API_KEY; // fallback to other keys if needed
+            if (geminiKey) {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${geminiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ role: 'user', parts: [{ text: `Say the following out loud: ${clean}` }] }],
+                        generationConfig: {
+                            responseModalities: ['AUDIO'],
+                            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } }
+                        }
+                    })
+                });
 
-            if (res.ok) {
-                // Stream audio via Blob URL
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const audio = new Audio(url);
-                audioRef.current = audio;
-                audio.playbackRate = 1.05;
-                audio.onended = () => {
-                    URL.revokeObjectURL(url);
-                    audioRef.current = null;
-                    onDone?.();
-                };
-                audio.onerror = () => {
-                    URL.revokeObjectURL(url);
-                    audioRef.current = null;
-                    onDone?.();
-                };
-                await audio.play();
-                return; // success — don't fall through to browser TTS
-            }
-            // 503 = ElevenLabs not configured → fall through to browser TTS
-            if (res.status !== 503) {
-                console.warn('[TTS] ElevenLabs error:', res.status);
+                if (response.ok) {
+                    const data = await response.json();
+                    const audioBase64 = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+
+                    if (audioBase64) {
+                        const audioSrc = createWavBlob(audioBase64, 24000);
+                        const audio = new Audio(audioSrc);
+                        audioRef.current = audio;
+                        audio.playbackRate = 1.0;
+                        audio.onended = () => {
+                            URL.revokeObjectURL(audioSrc);
+                            audioRef.current = null;
+                            onDone?.();
+                        };
+                        audio.onerror = () => {
+                            URL.revokeObjectURL(audioSrc);
+                            audioRef.current = null;
+                            onDone?.();
+                        };
+                        await audio.play();
+                        return; // Successfully played natural voice!
+                    }
+                }
             }
         } catch (err) {
-            console.warn('[TTS] Proxy unreachable, using browser TTS fallback:', err);
+            console.warn('[TTS] Direct Gemini TTS failed, using browser fallback:', err);
         }
 
-        // --- Fallback: browser SpeechSynthesis (robotic but always works) ---
-        const utter = new SpeechSynthesisUtterance(clean);
-        utter.rate = 0.92;   // slightly slower = more natural
-        utter.pitch = 1.0;
-        utter.volume = 1.0;
+        // --- Fallback: ResponsiveVoice ---
+        const voiceProfile = currentLang.code === 'id' ? 'Indonesian Female' :
+            currentLang.code === 'en' ? 'US English Female' :
+                'Indonesian Female'; // default auto to Indonesian
 
-        const assignVoice = () => {
-            const voices = window.speechSynthesis.getVoices();
-            // Priority: Google neural > Apple Samantha > any local
-            const priority = [
-                voices.find(v => v.name === 'Google UK English Female'),
-                voices.find(v => v.name === 'Google US English'),
-                voices.find(v => v.name === 'Samantha'),
-                voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')),
-                voices.find(v => v.localService && v.lang.startsWith('en')),
-                voices.find(v => v.lang.startsWith('en')),
-                voices[0],
-            ].find(Boolean);
-            if (priority) utter.voice = priority;
-        };
-
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) assignVoice();
-        else window.speechSynthesis.addEventListener('voiceschanged', assignVoice, { once: true });
-
-        utter.onend = () => onDone?.();
-        utter.onerror = () => onDone?.();
-        window.speechSynthesis.speak(utter);
-    }, [isMuted, stopSpeaking]);
+        if ((window as any).responsiveVoice) {
+            (window as any).responsiveVoice.speak(clean, voiceProfile, {
+                pitch: 1,
+                rate: 1,
+                volume: 1,
+                onend: () => onDone?.(),
+                onerror: () => onDone?.()
+            });
+        } else {
+            // Native fallback if script not loaded
+            const utter = new SpeechSynthesisUtterance(clean);
+            utter.rate = 0.92;
+            utter.onend = () => onDone?.();
+            utter.onerror = () => onDone?.();
+            window.speechSynthesis.speak(utter);
+        }
+    }, [isMuted, stopSpeaking, currentLang]);
 
     // When AI finishes → speak response → then listen again
     useEffect(() => {

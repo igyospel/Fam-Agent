@@ -62,18 +62,51 @@ export async function* streamGeminiResponse(
       messages.push({ role: 'user', content: currentMessageText });
     }
 
-    // Call our secure proxy — pass isPremiumUser so the proxy can pick the right model
-    const response = await fetch(PROXY_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages,
-        systemInstruction: SYSTEM_INSTRUCTION,
-        stream: true,
-        webSearch,
-        isPremiumUser
-      })
-    });
+    let response: Response;
+
+    // --- LOCAL DEV BYPASS ---
+    // Bypass Vercel serverless functions in local dev by directly calling Groq
+    if (import.meta.env.DEV && import.meta.env.VITE_GROQ_API_KEY) {
+      const groqMessages = [
+        { role: 'system', content: SYSTEM_INSTRUCTION },
+        ...messages.map(m => {
+          if (Array.isArray(m.content)) {
+            // Groq fallback simple text extraction for images
+            const textParts = m.content.filter((c: any) => c.type === 'text').map((c: any) => c.text);
+            return { role: m.role, content: textParts.join('\n') };
+          }
+          return m;
+        })
+      ];
+
+      response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'llama-3.3-70b-versatile',
+          messages: groqMessages,
+          stream: true,
+          temperature: 0.7,
+          max_tokens: 8192
+        })
+      });
+    } else {
+      // --- PRODUCTION VERCEL ---
+      response = await fetch(PROXY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages,
+          systemInstruction: SYSTEM_INSTRUCTION,
+          stream: true,
+          webSearch,
+          isPremiumUser
+        })
+      });
+    }
 
     if (!response.ok) {
       const errData = await response.json().catch(() => ({}));
