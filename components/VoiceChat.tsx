@@ -34,20 +34,20 @@ function getBestVoice(langCode = 'en'): SpeechSynthesisVoice | null {
     const voices = window.speechSynthesis.getVoices();
     if (!voices.length) return null;
 
-    // Priority list: Google neural > Apple premium > any local
+    // Priority list: Google neural male > any male > fallback
     const priorities = langCode === 'id'
         ? [
-            voices.find(v => v.name.toLowerCase().includes('google') && v.lang.startsWith('id')),
+            voices.find(v => v.name.toLowerCase().includes('google') && v.lang.startsWith('id') && v.name.toLowerCase().includes('male')),
             voices.find(v => v.lang.startsWith('id')),
-            voices.find(v => v.name === 'Google UK English Female'),
-            voices.find(v => v.name === 'Google US English'),
+            voices.find(v => v.name === 'Google UK English Male'),
+            voices.find(v => v.name === 'Google US English Male'),
             voices.find(v => v.lang.startsWith('en') && v.name.includes('Google')),
             voices[0],
         ]
         : [
-            voices.find(v => v.name === 'Google UK English Female'),
-            voices.find(v => v.name === 'Google US English'),
-            voices.find(v => v.name === 'Samantha'),
+            voices.find(v => v.name === 'Google UK English Male'),
+            voices.find(v => v.name === 'Google US English Male'),
+            voices.find(v => v.name === 'Daniel'), // Apple male voice
             voices.find(v => v.name.includes('Google') && v.lang.startsWith('en')),
             voices.find(v => v.localService && v.lang.startsWith('en')),
             voices[0],
@@ -211,7 +211,7 @@ const VoiceChat: React.FC<VoiceChatProps> = ({ onClose, onSendMessage, lastAIMes
         // 1. Try ResponsiveVoice (Google TTS under the hood — most natural)
         const rv = (window as any).responsiveVoice;
         if (rv && rv.voiceSupport()) {
-            const rvVoice = 'Indonesian Female'; // natural Indonesian Google voice
+            const rvVoice = 'Indonesian Male'; // natural male Indonesian Google voice
             rv.speak(clean, rvVoice, {
                 pitch: 1,
                 rate: 1,
