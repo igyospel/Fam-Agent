@@ -76,14 +76,14 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose, onSubscr
         setLoadingPrice(true);
         setError(null);
         Promise.all([
-            fetchCryptoPrice('SOL', 200),
-            fetchCryptoPrice('ETH', 3000),
-            fetchCryptoPrice('BTC', 65000),
+            fetchCryptoPrice('SOL', 86),
+            fetchCryptoPrice('ETH', 2300),
+            fetchCryptoPrice('BTC', 85000),
         ]).then(([sol, eth, btc]) => {
             setPrices({ SOL: sol, ETH: eth, BTC: btc });
             setLoadingPrice(false);
         }).catch(() => {
-            setPrices({ SOL: 200, ETH: 3000, BTC: 65000 });
+            setPrices({ SOL: 86, ETH: 2300, BTC: 85000 });
             setLoadingPrice(false);
         });
     }, []);
