@@ -155,41 +155,46 @@ const Sidebar: React.FC<SidebarProps> = ({
         </div>
 
         {/* Bottom Section */}
-        <div className="p-4">
+        <div className="p-4 mt-auto">
           {/* User Profile */}
-          <div className="flex items-center gap-3 p-3 bg-white/5 border border-white/10 rounded-2xl hover:bg-white/10 transition-colors group">
-            <div
-              className="relative cursor-pointer shrink-0"
-              onClick={onOpenProfile}
-            >
-              <img
-                src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=random`}
-                alt="Profile"
-                className="w-10 h-10 rounded-xl object-cover border border-white/20 shadow-md"
-              />
-              <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-[#0a0a0a] rounded-full"></div>
-            </div>
+          <div className="group relative rounded-2xl p-[1px] bg-gradient-to-b from-white/10 to-transparent hover:from-orange-500/30 transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-500/0 via-orange-500/0 to-amber-500/0 group-hover:from-orange-500/10 group-hover:via-amber-500/5 group-hover:to-transparent rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-md" />
 
-            <div
-              className="flex-1 min-w-0 cursor-pointer flex flex-col justify-center gap-0.5"
-              onClick={onOpenProfile}
-            >
-              <div className="flex items-center gap-1.5">
-                <p className="text-sm font-bold text-white truncate group-hover:text-orange-400 transition-colors">{user.name}</p>
-                {user.role === 'dev' && <span className="text-[8px] font-black bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded uppercase border border-purple-500/30">Dev</span>}
-                {user.role === 'pro' && <span className="text-[8px] font-black bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded uppercase border border-yellow-500/30">Pro</span>}
-                {(!user.role || user.role === 'user') && <span className="text-[8px] font-black bg-gray-500/20 text-gray-400 px-1.5 py-0.5 rounded uppercase border border-gray-500/30">Free</span>}
+            <div className="relative flex items-center gap-3 p-3 bg-[#0a0a0a] rounded-[15px] hover:bg-[#0f0f0f] transition-all duration-300">
+              <div
+                className="relative cursor-pointer shrink-0 group/avatar"
+                onClick={onOpenProfile}
+              >
+                <div className="absolute inset-0 bg-white/20 rounded-xl blur-md opacity-0 group-hover/avatar:opacity-100 transition-opacity duration-300" />
+                <img
+                  src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=random`}
+                  alt="Profile"
+                  className="relative w-11 h-11 rounded-xl object-cover border border-white/10 shadow-lg group-hover/avatar:border-orange-500/50 transition-colors duration-300"
+                />
+                <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-[#0a0a0a] rounded-full shadow-[0_0_8px_rgba(34,197,94,0.6)]"></div>
               </div>
-              <p className="text-[10px] text-gray-500 truncate uppercase tracking-widest font-medium" title={user.email}>{user.email}</p>
-            </div>
 
-            <button
-              onClick={onLogout}
-              className="text-gray-500 hover:text-red-400 transition-colors p-2 rounded-xl hover:bg-red-500/10"
-              title="Log Out"
-            >
-              <LogOut size={16} />
-            </button>
+              <div
+                className="flex-1 min-w-0 cursor-pointer flex flex-col justify-center gap-0.5"
+                onClick={onOpenProfile}
+              >
+                <div className="flex items-center gap-2 mb-0.5">
+                  <p className="text-[15px] font-bold text-white truncate group-hover:text-orange-400 transition-colors drop-shadow-sm">{user.name.split(' ')[0]}</p>
+                  {user.role === 'dev' && <span className="text-[9px] font-black bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded uppercase border border-purple-500/30 tracking-wider">Dev</span>}
+                  {user.role === 'pro' && <span className="text-[9px] font-black bg-yellow-500/20 text-yellow-500 px-1.5 py-0.5 rounded uppercase border border-yellow-500/30 tracking-wider shadow-[0_0_10px_-2px_rgba(234,179,8,0.4)]">Pro</span>}
+                  {(!user.role || user.role === 'user') && <span className="text-[8px] font-bold bg-white/10 text-gray-400 px-1.5 py-0.5 rounded uppercase border border-white/10 tracking-[0.1em]">Free</span>}
+                </div>
+                <p className="text-[10px] text-gray-500 truncate uppercase tracking-[0.15em] font-semibold" title={user.email}>{user.email}</p>
+              </div>
+
+              <button
+                onClick={onLogout}
+                className="shrink-0 text-gray-500 hover:text-white transition-all p-2 rounded-xl hover:bg-white/5 hover:border-white/10 border border-transparent flex items-center justify-center group/logout"
+                title="Log Out"
+              >
+                <LogOut size={16} className="group-hover/logout:-translate-x-0.5 transition-transform" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
