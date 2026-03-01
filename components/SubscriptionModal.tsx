@@ -16,11 +16,11 @@ interface SubscriptionModalProps {
     onSubscribed: () => void;
 }
 
-async function fetchCryptoPrice(symbol: 'SOLUSDT' | 'ETHUSDT' | 'BTCUSDT', fallback: number): Promise<number> {
+async function fetchCryptoPrice(symbol: 'SOL' | 'ETH' | 'BTC', fallback: number): Promise<number> {
     try {
-        const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
+        const res = await fetch(`https://min-api.cryptocompare.com/data/price?fsym=${symbol}&tsyms=USD`);
         const data = await res.json();
-        return data.price ? parseFloat(data.price) : fallback;
+        return data.USD ? parseFloat(data.USD) : fallback;
     } catch {
         return fallback;
     }
@@ -76,9 +76,9 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose, onSubscr
         setLoadingPrice(true);
         setError(null);
         Promise.all([
-            fetchCryptoPrice('SOLUSDT', 200),
-            fetchCryptoPrice('ETHUSDT', 3000),
-            fetchCryptoPrice('BTCUSDT', 65000),
+            fetchCryptoPrice('SOL', 200),
+            fetchCryptoPrice('ETH', 3000),
+            fetchCryptoPrice('BTC', 65000),
         ]).then(([sol, eth, btc]) => {
             setPrices({ SOL: sol, ETH: eth, BTC: btc });
             setLoadingPrice(false);
