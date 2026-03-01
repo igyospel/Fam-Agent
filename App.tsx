@@ -454,57 +454,80 @@ const App: React.FC = () => {
 
           {showLanding ? (
             /* --- Landing / Welcome State --- */
-            <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] px-4 pb-24 md:pb-16 fade-in relative">
+            <div className="flex flex-col items-center justify-center min-h-[calc(100dvh-64px)] px-4 pb-24 md:pb-16 relative overflow-hidden">
+
+              <style dangerouslySetInnerHTML={{
+                __html: `
+                @keyframes slideUpFade {
+                    from { opacity: 0; transform: translateY(20px); filter: blur(4px); }
+                    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+                }
+                @keyframes pulseGlow {
+                    0%, 100% { transform: scale(1); opacity: 0.15; }
+                    50% { transform: scale(1.1); opacity: 0.25; }
+                }
+                .animate-slide-up-1 { animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s both; }
+                .animate-slide-up-2 { animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.2s both; }
+                .animate-slide-up-3 { animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s both; }
+                .animate-slide-up-4 { animation: slideUpFade 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.4s both; }
+                .animate-pulse-glow { animation: pulseGlow 6s ease-in-out infinite; }
+              `}} />
 
               {/* Cinematic Background effect in Dashboard Landing */}
-              <div className="absolute top-1/4 w-[50vw] h-[50vw] bg-orange-500/5 rounded-full blur-[120px] pointer-events-none" />
+              <div className="absolute top-[10%] w-[60vw] h-[60vw] bg-orange-600/10 rounded-full blur-[140px] pointer-events-none animate-pulse-glow mix-blend-screen" />
+              <div className="absolute bottom-[10%] right-[10%] w-[40vw] h-[40vw] bg-amber-500/5 rounded-full blur-[100px] pointer-events-none animate-pulse-glow mix-blend-screen" style={{ animationDelay: '3s' }} />
 
-              <div className="mb-8 md:mb-12 text-center space-y-4 pt-6 md:pt-0 relative z-10">
+              <div className="mb-10 md:mb-14 text-center space-y-5 pt-8 md:pt-0 relative z-10 w-full max-w-4xl mx-auto flex flex-col items-center">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-[10px] sm:text-[11px] uppercase tracking-[0.2em] text-gray-300/90 mb-2 animate-slide-up-1 shadow-lg shadow-black/20">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
+                  System Initialized
+                </div>
 
-                <h2 className="text-4xl md:text-6xl font-bold tracking-tighter text-white">
-                  Welcome to <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 drop-shadow-[0_0_30px_rgba(249,115,22,0.3)]">Agent Arga</span>
+                <h2 className="text-5xl md:text-7xl lg:text-[5rem] font-bold tracking-tighter text-white animate-slide-up-2 leading-[1.05]">
+                  Welcome to <br className="md:hidden" /><span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-orange-500 [text-shadow:0_0_80px_rgba(249,115,22,0.4),0_2px_20px_rgba(0,0,0,0.3)] drop-shadow-[0_0_30px_rgba(249,115,22,0.3)]">Agent Arga</span>
                 </h2>
-                <p className="text-gray-400 max-w-xl mx-auto text-sm md:text-lg font-light leading-relaxed">
+                <p className="text-gray-400 max-w-xl mx-auto text-base md:text-xl font-light leading-relaxed animate-slide-up-3">
                   Nice to see you, <strong className="text-orange-200 font-medium">{user.name.split(' ')[0]}</strong>. How can I assist you with your tasks today?
                 </p>
               </div>
 
-              <div className="w-full max-w-2xl mb-6 relative z-10">
+              <div className="w-full max-w-2xl mb-8 relative z-10 animate-slide-up-3">
                 <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} isLanding={true} />
               </div>
 
               {/* Voice shortcut on landing */}
               <button
                 onClick={() => setIsVoiceChatOpen(true)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/5 border border-orange-500/20 text-orange-400/80 text-sm font-medium hover:bg-orange-500/10 hover:border-orange-500/40 hover:text-orange-300 transition-all mb-10 relative z-10"
+                className="flex items-center gap-2 px-6 py-3 rounded-full bg-white/[0.03] border border-orange-500/30 text-orange-400/90 text-sm font-medium hover:bg-orange-500/10 hover:border-orange-500/60 hover:text-orange-300 transition-all shadow-[0_0_20px_-5px_rgba(249,115,22,0.2)] hover:shadow-[0_0_30px_-5px_rgba(249,115,22,0.4)] mb-12 relative z-10 animate-slide-up-4 group"
               >
-                <AudioLines size={15} className="animate-pulse" />
+                <AudioLines size={16} className="text-orange-500 group-hover:scale-110 transition-transform" />
                 Or start with voice
               </button>
 
-              <div className="w-full max-w-5xl hidden md:block relative z-10">
-                <div className="flex items-center gap-2 mb-6 ml-2">
-                  <h3 className="font-semibold text-gray-400 text-sm tracking-widest uppercase">Quick Actions</h3>
+              <div className="w-full max-w-[1000px] hidden md:block relative z-10 animate-slide-up-4 pt-6 border-t border-white/[0.05]">
+                <div className="flex items-center justify-center gap-2 mb-8">
+                  <h3 className="font-semibold text-gray-500 text-xs tracking-[0.2em] uppercase bg-[#050505] px-4 -mt-11">Quick Actions</h3>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   {[
-                    { icon: User, text: "Write a to do list with best practice for designers" },
-                    { icon: Mail, text: "Draft a follow-up email for new leads from yesterday" },
-                    { icon: List, text: "Generate a quick task list for my sales team" }
+                    { icon: User, text: "Write a to do list with best practice for designers", gradient: "from-blue-500/10" },
+                    { icon: Mail, text: "Draft a follow-up email for new leads from yesterday", gradient: "from-violet-500/10" },
+                    { icon: List, text: "Generate a quick task list for my sales team", gradient: "from-orange-500/10" }
                   ].map((item, i) => (
                     <div
                       key={i}
                       onClick={() => handleTemplateClick(item.text)}
-                      className="bg-white/5 p-6 rounded-[1.5rem] border border-white/10 shadow-lg hover:shadow-[0_0_30px_-5px_rgba(249,115,22,0.15)] hover:border-orange-500/30 transition-all duration-300 cursor-pointer group flex flex-col justify-between h-40"
+                      className={`bg-gradient-to-br ${item.gradient} to-transparent bg-black/40 p-7 rounded-[1.75rem] border border-white/5 hover:border-white/20 shadow-[0_20px_40px_-20px_rgba(0,0,0,0.5)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.8)] transition-all duration-300 cursor-pointer group flex flex-col justify-between h-[160px] relative overflow-hidden`}
                     >
-                      <div>
-                        <p className="text-gray-300 font-medium text-sm leading-relaxed group-hover:text-white transition-colors">{item.text}</p>
+                      <div className="absolute inset-0 bg-white opacity-0 group-hover:opacity-[0.02] transition-opacity" />
+                      <div className="relative z-10">
+                        <p className="text-gray-300 font-medium text-[15px] leading-relaxed group-hover:text-white transition-colors">"{item.text}"</p>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <item.icon size={18} className="text-gray-500 group-hover:text-orange-400 transition-colors" />
-                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-orange-500/20 group-hover:border-orange-500/40 transition-all">
-                          <ArrowRight size={14} className="text-gray-500 group-hover:text-orange-400" />
+                      <div className="flex items-center justify-between mt-auto relative z-10">
+                        <item.icon size={20} className="text-gray-500 group-hover:text-white transition-colors" />
+                        <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-white/20 group-hover:border-white/30 transition-all">
+                          <ArrowRight size={14} className="text-gray-400 group-hover:text-white transition-transform group-hover:translate-x-0.5" />
                         </div>
                       </div>
                     </div>
@@ -527,28 +550,32 @@ const App: React.FC = () => {
         </main>
 
         {/* Floating Input Area for Chat Mode */}
-        {!showLanding && (
-          <div className="absolute bottom-0 left-0 right-0 px-3 md:px-4 pb-4 md:pb-6 flex justify-center z-20" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
-            <div className="w-full max-w-3xl bg-[#0a0a0a]/80 backdrop-blur-2xl rounded-3xl p-[1px] shadow-2xl shadow-black border border-white/10 relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-3xl opacity-50 pointer-events-none blur-sm" />
-              <div className="relative z-10 bg-[#0A0A0F] rounded-[1.4rem] overflow-hidden">
-                <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} isLanding={false} onOpenVoiceChat={() => setIsVoiceChatOpen(true)} />
+        {
+          !showLanding && (
+            <div className="absolute bottom-0 left-0 right-0 px-3 md:px-4 pb-4 md:pb-6 flex justify-center z-20" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+              <div className="w-full max-w-3xl bg-[#0a0a0a]/80 backdrop-blur-2xl rounded-3xl p-[1px] shadow-2xl shadow-black border border-white/10 relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500/10 to-amber-500/10 rounded-3xl opacity-50 pointer-events-none blur-sm" />
+                <div className="relative z-10 bg-[#0A0A0F] rounded-[1.4rem] overflow-hidden">
+                  <InputArea onSendMessage={handleSendMessage} isLoading={isLoading} isLanding={false} onOpenVoiceChat={() => setIsVoiceChatOpen(true)} />
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )
+        }
 
-      </div>
+      </div >
 
       {/* Voice Chat Overlay */}
-      {isVoiceChatOpen && (
-        <VoiceChat
-          onClose={() => setIsVoiceChatOpen(false)}
-          onSendMessage={handleVoiceSend}
-          lastAIMessage={lastAIMessage}
-          isAILoading={isLoading}
-        />
-      )}
+      {
+        isVoiceChatOpen && (
+          <VoiceChat
+            onClose={() => setIsVoiceChatOpen(false)}
+            onSendMessage={handleVoiceSend}
+            lastAIMessage={lastAIMessage}
+            isAILoading={isLoading}
+          />
+        )
+      }
 
       <DeleteConfirmationModal
         isOpen={deleteModalState.isOpen}
@@ -564,14 +591,16 @@ const App: React.FC = () => {
       />
 
       {/* Crypto Top-Up Modal */}
-      {showTopUp && (
-        <CryptoTopUpModal
-          onClose={() => setShowTopUp(false)}
-          onCreditsAdded={handleCreditsAdded}
-          currentCredits={credits}
-        />
-      )}
-    </div>
+      {
+        showTopUp && (
+          <CryptoTopUpModal
+            onClose={() => setShowTopUp(false)}
+            onCreditsAdded={handleCreditsAdded}
+            currentCredits={credits}
+          />
+        )
+      }
+    </div >
   );
 };
 
