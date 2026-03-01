@@ -16,11 +16,11 @@ interface SubscriptionModalProps {
     onSubscribed: () => void;
 }
 
-async function fetchCryptoPrice(coin: 'solana' | 'ethereum' | 'bitcoin', fallback: number): Promise<number> {
+async function fetchCryptoPrice(symbol: 'SOLUSDT' | 'ETHUSDT' | 'BTCUSDT', fallback: number): Promise<number> {
     try {
-        const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd`);
+        const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${symbol}`);
         const data = await res.json();
-        return data[coin]?.usd || fallback;
+        return data.price ? parseFloat(data.price) : fallback;
     } catch {
         return fallback;
     }
@@ -46,9 +46,9 @@ async function verifySolanaPayment(walletAddress: string, amountSol: number, sin
 }
 
 const CRYPTO_ICONS: Record<CryptoType, React.ReactNode> = {
-    SOL: <span className="text-purple-400 font-black text-lg">◎</span>,
-    ETH: <span className="text-blue-400 font-black text-lg">Ξ</span>,
-    BTC: <Bitcoin size={20} className="text-amber-400" />,
+    SOL: <img src="https://cryptologos.cc/logos/solana-sol-logo.svg?v=024" alt="Solana" className="w-6 h-6 object-contain" />,
+    ETH: <img src="https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=024" alt="Ethereum" className="w-5 h-5 object-contain" />,
+    BTC: <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=024" alt="Bitcoin" className="w-6 h-6 object-contain" />,
 };
 
 const CRYPTO_COLORS: Record<CryptoType, string> = {
@@ -76,9 +76,9 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ onClose, onSubscr
         setLoadingPrice(true);
         setError(null);
         Promise.all([
-            fetchCryptoPrice('solana', 200),
-            fetchCryptoPrice('ethereum', 3000),
-            fetchCryptoPrice('bitcoin', 65000),
+            fetchCryptoPrice('SOLUSDT', 200),
+            fetchCryptoPrice('ETHUSDT', 3000),
+            fetchCryptoPrice('BTCUSDT', 65000),
         ]).then(([sol, eth, btc]) => {
             setPrices({ SOL: sol, ETH: eth, BTC: btc });
             setLoadingPrice(false);
