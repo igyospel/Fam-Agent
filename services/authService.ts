@@ -99,8 +99,8 @@ export const authService = {
                     const newUser: UserRecord = {
                         name,
                         email: email.toLowerCase(), // Normalize email
-                        password,
-                        // Use consistent avatar based on name (no background=random)
+                        password, // Storing the actual password for simulation
+                        // Consistent avatar based on name (ui-avatars doesn't do random well if we want static)
                         avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0D8ABC&color=fff`,
                         role: defaultRole,
                         createdAt: Date.now()
