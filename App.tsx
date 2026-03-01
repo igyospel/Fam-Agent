@@ -14,7 +14,7 @@ import { authService } from './services/authService';
 import { generateId, compressImageForStorage } from './utils';
 import { extractUrls, fetchUrlContent } from './utils/webScraper';
 import { Sparkles, ArrowRight, User, List, Mail, CheckCircle2, AudioLines } from 'lucide-react';
-import CryptoTopUpModal from './components/CryptoTopUpModal';
+import SubscriptionModal from './components/SubscriptionModal';
 
 const STORAGE_KEY = 'fam_agent_histories';
 const WORKSPACE_KEY = 'fam_agent_active_workspace';
@@ -78,16 +78,13 @@ const App: React.FC = () => {
     workspaceId: null
   });
 
-  // Credits & Payment
-  const [showTopUp, setShowTopUp] = useState(false);
-  const [credits, setCredits] = useState<number>(() => {
-    try { return parseInt(localStorage.getItem('fam_agent_credits') || '5', 10); } catch { return 5; }
-  });
+  // Subscription / Upgrade
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  const handleCreditsAdded = (amount: number) => {
-    const newBalance = credits + amount;
-    setCredits(newBalance);
-    localStorage.setItem('fam_agent_credits', String(newBalance));
+  const handleSubscribed = async () => {
+    if (user) {
+      await handleUpdateUser({ ...user, role: 'pro' });
+    }
   };
 
   const [messages, setMessages] = useState<Message[]>([
@@ -244,18 +241,6 @@ const App: React.FC = () => {
 
   const handleSendMessage = async (text: string, attachments: Attachment[], webSearch: boolean = false) => {
     if (!text.trim() && attachments.length === 0) return;
-
-    // Credit Check for Freebies
-    const isFreeUser = !user?.role || user?.role === 'user';
-    if (isFreeUser && credits <= 0) {
-      showToast("❌ Daily Free Limit Reached. Silakan upgrade ke Pro.");
-      return;
-    }
-
-    // Decrement credits instantly
-    if (isFreeUser) {
-      handleCreditsAdded(-1);
-    }
 
     let currentWorkspaceId = activeWorkspace;
 
@@ -446,8 +431,8 @@ const App: React.FC = () => {
           isChatActive={!showLanding}
           onHistory={() => showToast("History synced to cloud.")}
           onToggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-          credits={credits}
-          onTopUp={() => setShowTopUp(true)}
+          isPro={user?.role === 'pro' || user?.role === 'dev'}
+          onUpgrade={() => setShowUpgradeModal(true)}
         />
 
         <main className="flex-1 overflow-y-auto custom-scrollbar relative w-full overscroll-none">
@@ -590,13 +575,12 @@ const App: React.FC = () => {
         onUpdateUser={handleUpdateUser}
       />
 
-      {/* Crypto Top-Up Modal */}
+      {/* Subscription Upgrade Modal */}
       {
-        showTopUp && (
-          <CryptoTopUpModal
-            onClose={() => setShowTopUp(false)}
-            onCreditsAdded={handleCreditsAdded}
-            currentCredits={credits}
+        showUpgradeModal && (
+          <SubscriptionModal
+            onClose={() => setShowUpgradeModal(false)}
+            onSubscribed={handleSubscribed}
           />
         )
       }
