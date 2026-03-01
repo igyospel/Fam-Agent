@@ -46,9 +46,27 @@ async function verifySolanaPayment(walletAddress: string, amountSol: number, sin
 }
 
 const CRYPTO_ICONS: Record<CryptoType, React.ReactNode> = {
-    SOL: <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png" alt="Solana" className="w-6 h-6 object-contain rounded-full" />,
-    ETH: <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png" alt="Ethereum" className="w-5 h-5 object-contain" />,
-    BTC: <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png" alt="Bitcoin" className="w-6 h-6 object-contain" />,
+    SOL: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-6 h-6 object-contain">
+            <path fill="#14F195" d="M5.42 23.51a1.22 1.22 0 0 0 .86.36h19.89c.8 0 1.25-.91.75-1.5l-2.45-2.88a1.2 1.2 0 0 0-.85-.36H3.72c-.79 0-1.25.9-.76 1.5z" />
+            <path fill="#9945FF" d="M5.42 8.49a1.22 1.22 0 0 0 .86.36h19.89c.8 0 1.25-.91.75-1.5l-2.45-2.88a1.2 1.2 0 0 0-.85-.36H3.72c-.79 0-1.25.9-.76 1.5zM27 12.86a1.2 1.2 0 0 0-.85-.36H5.72c-.28 0-.5.1-.69.25l-.23.23c-.15.18-.25.4-.25.68 0 .26.1.48.25.66l2.91 3.42a1.2 1.2 0 0 0 .85.36h20.44c.8 0 1.26-.92.76-1.5z" />
+        </svg>
+    ),
+    ETH: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-5 h-5 object-contain">
+            <path fill="#627EEA" d="M15.925 23.969L15.875 24v7.07l.05.15 7.425-10.456z" opacity=".601" />
+            <path fill="#627EEA" d="M15.925 23.969v-8.018L8.5 20.764z" />
+            <path fill="#627EEA" d="M15.925 15.952l-.025-.084V.78l-.05-.14v8.1L23.35 15.952z" opacity=".601" />
+            <path fill="#627EEA" d="M15.925 15.952V.64L8.5 15.952z" />
+            <path fill="#FFFFFF" d="M15.925 23.969l7.425-3.205-7.425-4.24z" opacity=".601" />
+            <path fill="#FFFFFF" d="M8.5 20.764l7.425 3.205v-7.445z" opacity=".601" />
+        </svg>
+    ),
+    BTC: (
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" className="w-6 h-6 object-contain">
+            <path fill="#F7931A" d="M16 32C7.163 32 0 24.837 0 16S7.163 0 16 0s16 7.163 16 16-7.163 16-16 16zm7.394-11.233c.895-5.996-3.795-8.082-10.264-9.355l1.838-7.39-3.327-.828-1.8 7.23c-.876-.218-1.782-.423-2.69-.623l1.812-7.272-3.328-.827-1.84 7.394c-2.736-.554-4.88-.865-6.66l-1.328 5.334s2.427.556 2.373.59c1.325.33 1.565 1.21 1.528 1.908L8.27 24.316c.15.038.344.116.577.243l-1.464 5.88c.88.218 3.328.828 3.328.828l1.85-7.43c.928.252 1.834.484 2.73.69l-1.84 7.394 3.328.828 1.847-7.422c5.96 1.05 10.36.42 11.236-5.83.69-5.18-.895-7.625-4.46-8.86zm-5.69 7.02c-1.353 5.437-10.518 2.508-13.483 1.77L9.75 14.8c2.964.738 12.35 3.125 11.018 9.353z" />
+        </svg>
+    ),
 };
 
 const CRYPTO_COLORS: Record<CryptoType, string> = {
