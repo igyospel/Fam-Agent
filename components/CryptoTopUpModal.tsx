@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Copy, CheckCircle2, Clock, Zap, Bitcoin, Loader2, ExternalLink, RefreshCw } from 'lucide-react';
+import { X, Copy, CheckCircle2, Clock, Zap, Bitcoin, Loader2, ExternalLink, RefreshCw, AlertCircle, ArrowRight } from 'lucide-react';
 
 // =====================================================================
 // CONFIG: Boss Arga's Wallet Addresses (Replace with your real wallets)
@@ -27,10 +27,14 @@ interface CryptoTopUpModalProps {
 }
 
 // Fetch live crypto prices from CoinGecko (free, no key required)
-async function fetchCryptoPrice(coin: 'solana' | 'ethereum' | 'bitcoin'): Promise<number> {
-    const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd`);
-    const data = await res.json();
-    return data[coin]?.usd || 0;
+async function fetchCryptoPrice(coin: 'solana' | 'ethereum' | 'bitcoin', fallback: number): Promise<number> {
+    try {
+        const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd`);
+        const data = await res.json();
+        return data[coin]?.usd || fallback;
+    } catch {
+        return fallback;
+    }
 }
 
 // Verify Solana payment by checking the latest txs on address via Solana RPC
@@ -91,14 +95,14 @@ const CryptoTopUpModal: React.FC<CryptoTopUpModalProps> = ({ onClose, onCreditsA
         setLoadingPrice(true);
         setError(null);
         Promise.all([
-            fetchCryptoPrice('solana'),
-            fetchCryptoPrice('ethereum'),
-            fetchCryptoPrice('bitcoin'),
+            fetchCryptoPrice('solana', 200),
+            fetchCryptoPrice('ethereum', 3000),
+            fetchCryptoPrice('bitcoin', 65000),
         ]).then(([sol, eth, btc]) => {
             setPrices({ SOL: sol, ETH: eth, BTC: btc });
             setLoadingPrice(false);
         }).catch(() => {
-            setError('Failed to fetch live prices. Check your connection.');
+            setPrices({ SOL: 200, ETH: 3000, BTC: 65000 });
             setLoadingPrice(false);
         });
     }, []);
@@ -170,34 +174,55 @@ const CryptoTopUpModal: React.FC<CryptoTopUpModalProps> = ({ onClose, onCreditsA
 
                     {/* STEP 1: SELECT TIER */}
                     {step === 'select_tier' && (
-                        <div className="space-y-3">
-                            <p className="text-sm text-gray-400 mb-4">Choose a credit package to continue using Agent Arga.</p>
-                            {error && <p className="text-red-400 text-xs text-center">{error}</p>}
-                            <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-4 animate-enter">
+                            <p className="text-sm text-gray-400 mb-2">Choose a credit package to continue using Agent Arga.</p>
+                            {error && (
+                                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 flex gap-2 items-center text-red-400 text-xs shadow-inner">
+                                    <AlertCircle size={14} />
+                                    <span>{error}</span>
+                                </div>
+                            )}
+                            <div className="grid grid-cols-2 gap-3 md:gap-4">
                                 {CREDIT_TIERS.map(tier => (
                                     <button
                                         key={tier.credits}
                                         onClick={() => setSelectedTier(tier)}
-                                        className={`relative p-4 rounded-xl border text-left transition-all ${selectedTier.credits === tier.credits
-                                                ? 'border-orange-500 bg-orange-500/10'
-                                                : 'border-white/10 bg-white/5 hover:border-white/25'
-                                            }`}
+                                        className={`group relative p-5 rounded-2xl text-left transition-all duration-300 overflow-hidden ${selectedTier.credits === tier.credits
+                                            ? 'bg-gradient-to-br from-orange-500/10 to-amber-500/5 border-orange-500/50 shadow-[0_0_20px_-5px_rgba(249,115,22,0.3)] ring-1 ring-orange-500/50'
+                                            : 'bg-[#141414] border-white/5 hover:border-white/20 hover:bg-[#1a1a1a]'
+                                            } border`}
                                     >
+                                        <div className={`absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${selectedTier.credits === tier.credits ? 'hidden' : 'block'}`} />
+
                                         {tier.popular && (
-                                            <span className="absolute -top-2 left-3 bg-orange-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">POPULAR</span>
+                                            <div className="absolute top-0 right-0">
+                                                <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white text-[9px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-wider shadow-lg">POPULAR</div>
+                                            </div>
                                         )}
-                                        <div className="text-white font-bold text-xl">{tier.credits.toLocaleString()}</div>
-                                        <div className="text-gray-400 text-xs">credits</div>
-                                        <div className="text-orange-400 font-bold text-sm mt-2">${tier.usd}</div>
-                                        {tier.label === 'Pro' && <div className="text-[10px] text-green-400 mt-1">Best value/credit</div>}
+                                        <div className="relative z-10 flex flex-col h-full">
+                                            <div className={`text-2xl font-black tracking-tight ${selectedTier.credits === tier.credits ? 'text-white' : 'text-gray-200 group-hover:text-white transition-colors'}`}>
+                                                {tier.credits.toLocaleString()}
+                                            </div>
+                                            <div className={`text-[11px] uppercase tracking-wider font-semibold mb-4 ${selectedTier.credits === tier.credits ? 'text-orange-200/70' : 'text-gray-500'}`}>credits</div>
+
+                                            <div className="mt-auto">
+                                                <div className={`text-lg font-bold ${selectedTier.credits === tier.credits ? 'text-orange-400' : 'text-gray-400 group-hover:text-orange-400 transition-colors'}`}>
+                                                    ${tier.usd}
+                                                </div>
+                                                {tier.label === 'Pro' && <div className="text-[10px] text-green-400/90 font-medium mt-1 uppercase tracking-wide">Best value per credit</div>}
+                                            </div>
+                                        </div>
                                     </button>
                                 ))}
                             </div>
                             <button
                                 onClick={() => setStep('select_crypto')}
-                                className="w-full mt-4 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold hover:opacity-90 transition-opacity"
+                                className="w-full mt-6 py-4 rounded-xl relative group overflow-hidden bg-white/5 border border-white/10 hover:border-orange-500/50 transition-all font-bold"
                             >
-                                Continue with {selectedTier.credits.toLocaleString()} Credits → ${selectedTier.usd}
+                                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-amber-500 opacity-90 group-hover:opacity-100 transition-opacity" />
+                                <span className="relative z-10 text-white flex items-center justify-center gap-2">
+                                    Continue with {selectedTier.credits.toLocaleString()} Credits <ArrowRight size={16} /> ${selectedTier.usd}
+                                </span>
                             </button>
                         </div>
                     )}
