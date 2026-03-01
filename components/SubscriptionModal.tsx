@@ -46,9 +46,9 @@ async function verifySolanaPayment(walletAddress: string, amountSol: number, sin
 }
 
 const CRYPTO_ICONS: Record<CryptoType, React.ReactNode> = {
-    SOL: <img src="https://cryptologos.cc/logos/solana-sol-logo.svg?v=024" alt="Solana" className="w-6 h-6 object-contain" />,
-    ETH: <img src="https://cryptologos.cc/logos/ethereum-eth-logo.svg?v=024" alt="Ethereum" className="w-5 h-5 object-contain" />,
-    BTC: <img src="https://cryptologos.cc/logos/bitcoin-btc-logo.svg?v=024" alt="Bitcoin" className="w-6 h-6 object-contain" />,
+    SOL: <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/info/logo.png" alt="Solana" className="w-6 h-6 object-contain rounded-full" />,
+    ETH: <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/info/logo.png" alt="Ethereum" className="w-5 h-5 object-contain" />,
+    BTC: <img src="https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/bitcoin/info/logo.png" alt="Bitcoin" className="w-6 h-6 object-contain" />,
 };
 
 const CRYPTO_COLORS: Record<CryptoType, string> = {
