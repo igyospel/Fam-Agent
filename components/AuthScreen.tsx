@@ -123,10 +123,7 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
           <div className="bg-[#050507]/90 backdrop-blur-2xl border border-white/10 shadow-[0_30px_80px_-40px_rgba(0,0,0,1)] rounded-[2.25rem] overflow-hidden relative">
             {/* Card Header */}
             <div className="px-8 pt-9 pb-5 text-center border-b border-white/5 bg-gradient-to-b from-white/[0.04] via-transparent to-transparent">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[11px] uppercase tracking-[0.22em] text-gray-300/90 mb-4">
-                <span className="w-1.5 h-1.5 rounded-full bg-orange-400 animate-pulse" />
-                Agent Arga OS
-              </div>
+
               <div className="w-14 h-14 mx-auto bg-gradient-to-tr from-orange-500 to-amber-500 text-white rounded-2xl flex items-center justify-center shadow-[0_0_40px_-8px_rgba(249,115,22,0.7)] mb-5">
                 <Command size={26} />
               </div>
